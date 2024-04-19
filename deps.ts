@@ -1,0 +1,1 @@
+export { default as binaryen } from 'npm:binaryen'
