@@ -9,13 +9,13 @@ import {
     LetStatement,
     FnStatement,
     ReturnStatement,
+    ExpressionStatement,
     BinaryExpression,
     CallExpression,
     IntegerLiteral,
-    Identifier,
-    DataType
+    Identifier
 } from '../parser/ast.ts'
-import { ExpressionStatement } from '../parser/ast.ts'
+import { TokenType, DataType } from '../parser/token.ts'
 import { getWasmType } from './utils.ts'
 
 export class CodegenVisitor {
@@ -88,7 +88,7 @@ export class CodegenVisitor {
         }
 
         const index = this.scopes[this.scopes.length - 1].size
-        this.scopes[this.scopes.length - 1].set(name, { type: DataType.Int, index, reason: 'declaration' })
+        this.scopes[this.scopes.length - 1].set(name, { type: TokenType.Int, index, reason: 'declaration' })
         return this.module.local.set(index, initExpr)
     }
 
@@ -103,7 +103,7 @@ export class CodegenVisitor {
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
             // locals.push(this.module.local.get(param.value, binaryen.i32));
-            this.scopes[this.scopes.length-1].set(param.name.value, { type: DataType.Int, index, reason: 'parameter' })
+            this.scopes[this.scopes.length-1].set(param.name.value, { type: TokenType.Int, index, reason: 'parameter' })
         }
 
         // handle return type

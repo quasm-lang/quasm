@@ -1,14 +1,11 @@
 import {
     Token,
-    Lexer,
     TokenType,
+    DataType,
     DataTypeToken
-} from './lexer.ts'
+} from './token.ts'
 
-import {
-    tokenToOperatorType,
-    dataTypeTokenToAst
-} from './utils.ts'
+import { Lexer } from './lexer.ts'
 
 import {
     Program,
@@ -26,9 +23,7 @@ import {
     Field,
     Spec,
     SourceLocation,
-    AstType,
-    // OperatorType,
-    DataType,
+    AstType
 } from './ast.ts'
 
 export class Parser {
@@ -173,11 +168,11 @@ export class Parser {
         const parameters = this.parseFnDeclarationParameters()
         this.match(TokenType.RightParen)
 
-        let returnType: DataType = DataType.None; // Default return type
+        let returnType: DataType = TokenType.None; // Default return type
         if (this.eq(TokenType.RightArrow)) {      // scenario in which type exists
             this.consume()
             const returnToken = this.matchDataType()
-            returnType = dataTypeTokenToAst[returnToken.type]
+            returnType = returnToken.type
         }
 
         this.match(TokenType.LeftBrace)
@@ -204,7 +199,7 @@ export class Parser {
             }
 
             const dataTypeToken: DataTypeToken = this.matchDataType()
-            const dataType = dataTypeTokenToAst[dataTypeToken.type]
+            const dataType = dataTypeToken.type
 
             const param: Field = {
                 type: AstType.Field,
@@ -248,7 +243,7 @@ export class Parser {
 
         if (this.eqDataType()) {
             const dataTypeToken = this.matchDataType()
-            dataType = dataTypeTokenToAst[dataTypeToken.type]
+            dataType = dataTypeToken.type
         }
     
         if (this.eq(TokenType.EqualSign)) {
@@ -317,7 +312,7 @@ export class Parser {
 
         while (this.eq(TokenType.Plus) || this.eq(TokenType.Minus)) {
             const operatorToken = this.consume()
-            const operator = tokenToOperatorType[operatorToken.type]
+            const operator = operatorToken.type
             const right = this.parseFactor()
             left = {
                 type: AstType.BinaryExpression,
@@ -338,7 +333,7 @@ export class Parser {
             this.eq(TokenType.Asterisk) || this.eq(TokenType.Slash)
         ) {
             const operatorToken = this.consume()
-            const operator = tokenToOperatorType[operatorToken.type]
+            const operator = operatorToken.type
             const right = this.parsePrimary()
             left = {
                 type: AstType.BinaryExpression,

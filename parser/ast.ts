@@ -1,3 +1,8 @@
+import {
+    DataType,
+    Operator
+} from './token.ts'
+
 export enum AstType {
     Program = 'PROGRAM',
     LetStatement = 'LET_STATEMENT',
@@ -15,13 +20,6 @@ export enum AstType {
     Spec = 'SPEC'
 }
 
-export enum DataType {
-    Int = 'int_type',
-    Float = 'float_type',
-    None = 'none_type'
-}
-
-// export type Node = Program | Statement | Expression
 export interface SourceLocation {
     start: {
         line: number
@@ -102,17 +100,10 @@ export interface CallExpression extends Expression {
     arguments: Expression[]
 }
 
-export enum OperatorType {
-    Add = '+',
-    Subtract = '-',
-    Multiply = '*',
-    Divide = '/'
-}
-
 export interface BinaryExpression extends Expression {
     type: AstType.BinaryExpression
     left: Expression
-    operator: OperatorType
+    operator: Operator
     right: Expression
 }
 

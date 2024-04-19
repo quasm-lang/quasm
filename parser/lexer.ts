@@ -1,43 +1,10 @@
-export enum TokenType {
-    Number = 'num',
-    Identifier = 'identifier',
-    
-    Plus = '+',
-    Minus = '-',
-    Asterisk = '*',
-    Slash = '/',
-    LogicalOr = '||',
-    LogicalAnd = '&&',
-    RightArrow = '->',
-
-    LeftParen = '(',
-    RightParen = ')',
-    LeftBrace = '{',
-    RightBrace = '}',
-    Comma = ',',
-    Dot = '.',
-    Semicolon = ';',
-    EqualSign = '=',
-
-    Let = 'let',
-    Fn = 'fn',
-    Return = 'return',
-
-    Int = 'int',
-    Float = 'float',
-    None = 'none',
-    
-    NewLine = 'new line', // TODO (Future):
-    EOF = 'eof'
-} // When adding new element to Token Type also add it manually again into the variable "tokenList"
-
-export interface Token {
-    type: TokenType
-    line: number
-    column: number
-    // position: number
-    literal: string
-}
+import {
+    Token,
+    TokenType,
+    keywords,
+    tokenList,
+    multiCharTokenList
+} from './token.ts'
 
 function isWhitespace(char: string): boolean {
     return /\s+/.test(char) // skips all whitespaces
@@ -49,49 +16,13 @@ function isDigit(char: string): boolean {
     return /^\d$/.test(char)
 }
 
-const tokenList: Record<string, TokenType> = {
-    '+': TokenType.Plus,
-    '-': TokenType.Minus,
-    '*': TokenType.Asterisk,
-    '/': TokenType.Slash,
-    '(': TokenType.LeftParen,
-    ')': TokenType.RightParen,
-    '{': TokenType.LeftBrace,
-    '}': TokenType.RightBrace,
-    ',': TokenType.Comma,
-    '.': TokenType.Dot,
-    ';': TokenType.Semicolon,
-    '=': TokenType.EqualSign
-}
-
-const multiCharTokenList: Record<string, TokenType> = {
-    '||': TokenType.LogicalOr,
-    '&&': TokenType.LogicalAnd,
-    '->': TokenType.RightArrow,
-}
-
 // Identifier
 function isAlpha(char: string): boolean {
     return /^[A-Za-z_]$/.test(char);
 }
 
-// Keywords
-const keywords: Record<string, TokenType> = {
-    'let': TokenType.Let,
-    'fn': TokenType.Fn,
-    'return': TokenType.Return,
-    'int': TokenType.Int,
-    'float': TokenType.Float,
-    'none': TokenType.None,
-}
-
 function lookupIdentifier(identifier: string): TokenType {
     return keywords[identifier] || TokenType.Identifier
-}
-
-// Datatypes
-export type DataTypeToken = Token & {
-    type: TokenType.Int | TokenType.Float | TokenType.None
 }
 
 export class Lexer {
