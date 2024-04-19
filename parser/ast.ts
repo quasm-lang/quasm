@@ -24,11 +24,11 @@ export interface SourceLocation {
     start: {
         line: number
         column: number
-    };
+    }
     end: {
         line: number
         column: number
-    };
+    }
 }
 
 export interface Node {
@@ -44,19 +44,6 @@ export interface Program extends Node {
     statements: Statement[]
 }
 
-export interface Field extends Node {
-    type: AstType.Field
-    name: Identifier
-    dataType: DataType
-}
-
-export interface Spec extends Node {
-    type: AstType.Spec
-    name: Identifier
-    dataType?: DataType
-    value?: Expression
-}
-
 // Statements
 export interface ExpressionStatement extends Statement {
     type: AstType.ExpressionStatement
@@ -70,7 +57,6 @@ export interface BlockStatement extends Statement {
 
 export interface LetStatement extends Statement {
     type: AstType.LetStatement
-    // name: Identifier
     spec: Spec
 }
 
@@ -105,6 +91,19 @@ export interface BinaryExpression extends Expression {
     left: Expression
     operator: Operator
     right: Expression
+}
+
+export interface Field extends Node {
+    type: AstType.Field
+    name: Identifier
+    dataType: DataType
+}
+
+export interface Spec extends Node {
+    type: AstType.Spec
+    name: Identifier
+    dataType?: DataType
+    value?: Expression
 }
 
 export interface IntegerLiteral extends Expression {

@@ -27,7 +27,7 @@ export enum TokenType {
     Float32 = 'f32',
     None = 'none',
     
-    NewLine = 'new line', // TODO (Future):
+    NewLine = 'new line',
     EOF = 'eof'
 } // When adding new element to Token Type also add it manually again into the variable "tokenList"
 
