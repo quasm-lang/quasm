@@ -122,7 +122,7 @@ export class Parser {
         let statement: Statement
 
         if (this.eq(TokenType.Fn)) {
-            statement = this.parseFunctionStatement()
+            statement = this.parseFnStatement()
         } else if (this.eq(TokenType.Return)) {
             statement = this.parseReturnStatement()
         } else if (this.eq(TokenType.Let)) {
@@ -155,7 +155,7 @@ export class Parser {
         }
     }
 
-    private parseFunctionStatement(): FnStatement {
+    private parseFnStatement(): FnStatement {
         this.match(TokenType.Fn)
 
         const name: Identifier = {
@@ -222,6 +222,8 @@ export class Parser {
         this.match(TokenType.Return)
         const value = this.parseExpression()
 
+        this.match(TokenType.Semicolon)
+
         return {
             type: AstType.ReturnStatement,
             value,
@@ -259,6 +261,8 @@ export class Parser {
             location: this.getLocation()
         }
 
+        this.match(TokenType.Semicolon)
+
         return {
             type: AstType.LetStatement,
             spec,
@@ -268,6 +272,8 @@ export class Parser {
 
     private parseExpressionStatement(): ExpressionStatement {
         const expression = this.parseExpression()
+
+        this.match(TokenType.Semicolon)
 
         return {
             type: AstType.ExpressionStatement,
@@ -369,7 +375,7 @@ export class Parser {
                 }
             }
             default:
-                throw Error(`Parser Error: Unexpected token '${this.curToken.type}'`)
+                throw Error(`Parser Error: Unexpected token '${this.curToken.type}' at line ${this.curToken.line}`)
         }
     }
 }
