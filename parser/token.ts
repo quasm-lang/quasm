@@ -23,8 +23,8 @@ export enum TokenType {
     Fn = 'fn',
     Return = 'return',
 
-    Int = 'int',
-    Float = 'float',
+    Int32 = 'i32',
+    Float32 = 'f32',
     None = 'none',
     
     NewLine = 'new line', // TODO (Future):
@@ -65,13 +65,13 @@ export const keywords: Record<string, TokenType> = {
     'let': TokenType.Let,
     'fn': TokenType.Fn,
     'return': TokenType.Return,
-    'int': TokenType.Int,
-    'float': TokenType.Float,
+    'i32': TokenType.Int32,
+    'f32': TokenType.Float32,
     'none': TokenType.None,
 }
 
 // Datatypes
-export type DataType = TokenType.Int | TokenType.Float | TokenType.None
+export type DataType = TokenType.Int32 | TokenType.Float32 | TokenType.None
 export type DataTypeToken = Token & {
     type: DataType
 }

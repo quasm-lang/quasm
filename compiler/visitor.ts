@@ -88,7 +88,7 @@ export class CodegenVisitor {
         }
 
         const index = this.scopes[this.scopes.length - 1].size
-        this.scopes[this.scopes.length - 1].set(name, { type: TokenType.Int, index, reason: 'declaration' })
+        this.scopes[this.scopes.length - 1].set(name, { type: TokenType.Int32, index, reason: 'declaration' })
         return this.module.local.set(index, initExpr)
     }
 
@@ -103,7 +103,7 @@ export class CodegenVisitor {
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
             // locals.push(this.module.local.get(param.value, binaryen.i32));
-            this.scopes[this.scopes.length-1].set(param.name.value, { type: TokenType.Int, index, reason: 'parameter' })
+            this.scopes[this.scopes.length-1].set(param.name.value, { type: TokenType.Int32, index, reason: 'parameter' })
         }
 
         // handle return type

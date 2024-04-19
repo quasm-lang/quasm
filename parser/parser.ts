@@ -82,12 +82,12 @@ export class Parser {
     }
 
     private eqDataType(): boolean {
-        const token = this.eqAny([TokenType.Int, TokenType.Float, TokenType.None])
+        const token = this.eqAny([TokenType.Int32, TokenType.Float32, TokenType.None])
         return token !== null ? true : false
     }
 
     private matchDataType(): DataTypeToken {
-        return this.matchAny([TokenType.Int, TokenType.Float, TokenType.None]) as DataTypeToken
+        return this.matchAny([TokenType.Int32, TokenType.Float32, TokenType.None]) as DataTypeToken
     }
 
     private getLocation(): SourceLocation {
