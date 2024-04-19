@@ -1,4 +1,4 @@
-import binaryen from 'npm:binaryen'
+import { binaryen } from '../deps.ts'
 
 import {
     Node,

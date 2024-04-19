@@ -1,4 +1,4 @@
-import binaryen from 'npm:binaryen'
+import { binaryen } from '../deps.ts'
 import { TokenType, DataType } from '../parser/token.ts'
 
 const dataTypeToWasmTypeMap: Record<DataType, binaryen.Type> = {
