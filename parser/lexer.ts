@@ -33,7 +33,10 @@ export class Lexer {
     constructor(private src: string) {}
 
     private advance(): string {
-        if (this.index <= this.src.length) this.index++
+        if (this.index <= this.src.length) {
+            this.index++
+            this.column++
+        }
         return this.src[this.index]
     }
 
