@@ -23,14 +23,15 @@ import {
     Field,
     Spec,
     SourceLocation,
-    AstType
+    AstType,
+    UnaryExpression
 } from './ast.ts'
 
 export class Parser {
     private curToken: Token
     
     constructor(private lexer: Lexer) {
-        this.curToken = this.advance()
+        this.curToken = this.lexer.nextToken()
     }
 
     private eof() {
@@ -41,15 +42,9 @@ export class Parser {
         return this.lexer.peekToken()
     }
 
-    private advance() {
-        this.curToken = this.lexer.nextToken()
-        // console.log(this.curToken) // For DEBUGGING purpose
-        return this.curToken
-    }
-
     private consume(): Token {
         const prev = this.curToken
-        this.curToken = this.advance()
+        this.curToken = this.lexer.nextToken()
         return prev
     }
 
@@ -61,7 +56,7 @@ export class Parser {
         return types.includes(this.curToken.type) ? this.curToken : null
     }
 
-    private eqPeek(token: TokenType): boolean {
+    private peekEq(token: TokenType): boolean {
         return this.lexer.peekToken().type === token
     }
 
@@ -248,8 +243,8 @@ export class Parser {
             dataType = dataTypeToken.type
         }
     
-        if (this.eq(TokenType.EqualSign)) {
-            this.match(TokenType.EqualSign)
+        if (this.eq(TokenType.Assignment)) {
+            this.match(TokenType.Assignment)
             value = this.parseExpression()
         }
 
@@ -272,7 +267,6 @@ export class Parser {
 
     private parseExpressionStatement(): ExpressionStatement {
         const expression = this.parseExpression()
-
         this.match(TokenType.Semicolon)
 
         return {
@@ -282,8 +276,74 @@ export class Parser {
         }
     }
 
-    private parseExpression(): Expression {
-        return this.parseTerm()
+    private precedence(type: TokenType): number {
+        switch (type) {
+          case TokenType.Asterisk:
+          case TokenType.Slash:
+            return 3;
+          case TokenType.Plus:
+          case TokenType.Minus:
+            return 2;
+          case TokenType.LeftParen:
+            return 1;
+          default:
+            return 0;
+        }
+    }
+
+    private parseExpression(precedence = 0): Expression {
+        let left = this.parsePrefixExpression()
+
+        while (precedence < this.precedence(this.curToken.type)) {
+            left = this.parseInfixExpression(left)
+        }
+
+        return left
+    }
+
+    private parsePrefixExpression(): Expression {
+        switch (this.curToken.type) {
+            case TokenType.Number:
+                return this.parseIntegerLiteral()
+            case TokenType.Identifier:
+                return this.parseIdentifier()
+            case TokenType.Minus:
+                return this.parseUnaryExpression()
+            case TokenType.LeftParen:
+                return this.parseGroupedExpression()
+        }
+        throw new Error('Error')
+    }
+
+    private parseInfixExpression(left: Expression): Expression {
+        switch (this.curToken.type) {
+            case TokenType.Plus:
+            case TokenType.Minus:
+            case TokenType.Asterisk:
+            case TokenType.Slash: {
+                const operator = this.match(this.curToken.type).type
+                const precedence = this.precedence(operator)
+                const right = this.parseExpression(precedence)
+                return {
+                    type: AstType.BinaryExpression,
+                    left,
+                    operator,
+                    right,
+                    location: this.getLocation()
+                } as BinaryExpression
+            }
+            case TokenType.LeftParen:
+                return this.parseCallExpression(left as Identifier)
+            default:
+                return left
+        }
+    }
+
+    private parseGroupedExpression(): Expression {
+        this.match(TokenType.LeftParen)
+        const expression = this.parseExpression()
+        this.match(TokenType.RightParen)
+        return expression
     }
 
     private parseCallExpression(identifier: Identifier): CallExpression {
@@ -313,69 +373,28 @@ export class Parser {
         return args
     }
 
-    private parseTerm(): Expression {
-        let left = this.parseFactor()
-
-        while (this.eq(TokenType.Plus) || this.eq(TokenType.Minus)) {
-            const operatorToken = this.consume()
-            const operator = operatorToken.type
-            const right = this.parseFactor()
-            left = {
-                type: AstType.BinaryExpression,
-                left,
-                operator,
-                right,
-                location: this.getLocation()
-            } as BinaryExpression
+    private parseIntegerLiteral(): IntegerLiteral {
+        return {
+            type: AstType.IntegerLiteral,
+            value: parseInt(this.consume().literal),
+            location: this.getLocation()
         }
-
-        return left
     }
 
-    private parseFactor(): Expression {
-        let left = this.parsePrimary()
-
-        while (
-            this.eq(TokenType.Asterisk) || this.eq(TokenType.Slash)
-        ) {
-            const operatorToken = this.consume()
-            const operator = operatorToken.type
-            const right = this.parsePrimary()
-            left = {
-                type: AstType.BinaryExpression,
-                left,
-                operator,
-                right,
-                location: this.getLocation()
-            } as BinaryExpression
+    private parseIdentifier(): Identifier {
+        return {
+            type: AstType.Identifier,
+            value: this.consume().literal,
+            location: this.getLocation()
         }
-
-        return left
     }
 
-    private parsePrimary(): Expression {
-        switch (this.curToken.type) {
-            case TokenType.Number:
-                return {
-                    type: AstType.IntegerLiteral,
-                    value: parseInt(this.consume().literal),
-                    location: this.getLocation()
-                } as IntegerLiteral
-            case TokenType.Identifier: {
-                const identifier: Identifier = {
-                    type: AstType.Identifier,
-                    value: this.consume().literal,
-                    location: this.getLocation()
-                }
-
-                if (this.eq(TokenType.LeftParen)) {
-                    return this.parseCallExpression(identifier)
-                } else {
-                    return identifier
-                }
-            }
-            default:
-                throw Error(`Parser Error: Unexpected token '${this.curToken.type}' at line ${this.curToken.line}`)
+    private parseUnaryExpression(): UnaryExpression {
+        return {
+            type: AstType.UnaryExpression,
+            operator: this.curToken.type,
+            right: this.parseExpression(),
+            location: this.getLocation()
         }
     }
 }

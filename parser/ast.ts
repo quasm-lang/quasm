@@ -1,6 +1,7 @@
 import {
     DataType,
-    Operator
+    Operator,
+    TokenType
 } from './token.ts'
 
 export enum AstType {
@@ -10,10 +11,12 @@ export enum AstType {
     ExpressionStatement = 'EXPRESSION_STATEMENT',
     FnStatement = 'FN_STATEMENT',
     ReturnStatement = 'RETURN_STATEMENT',
+    PrefixExpression = 'PREFIX_EXPRESSION',
+    InfixExpression = 'INFIX_EXPRESSION',
     AssignmentExpression = 'ASSIGNMENT_EXPRESSION',
     CallExpression = 'CALL_EXPRESSION',
+    UnaryExpression = 'UNARY_EXPRESSION',
     BinaryExpression = 'BINARY_EXPRESSION',
-    PrefixExpression = 'PREFIX_EXPRESSION',
     Identifier = 'IDENTIFIER',
     IntegerLiteral = 'INTEGER_LITERAL',
     Field = 'FIELD',
@@ -76,14 +79,20 @@ export interface ReturnStatement extends Statement {
 // Expressions
 export interface AssignmentExpression extends Expression {
     type: AstType.AssignmentExpression
-    left: Identifier
-    right: Expression
+    name: Identifier
+    value: Expression
 }
 
 export interface CallExpression extends Expression {
     type: AstType.CallExpression
     callee: Identifier
     arguments: Expression[]
+}
+
+export interface UnaryExpression extends Expression {
+    type: AstType.UnaryExpression,
+    operator: TokenType,
+    right: Expression
 }
 
 export interface BinaryExpression extends Expression {
