@@ -163,9 +163,9 @@ export class Parser {
         const parameters = this.parseFnDeclarationParameters()
         this.match(TokenType.RightParen)
 
-        let returnType: DataType = TokenType.None; // Default return type
+        let returnType: DataType = TokenType.None // Default return type
         if (this.eq(TokenType.RightArrow)) {      // scenario in which type exists
-            this.consume()
+            this.match(TokenType.RightArrow)
             const returnToken = this.matchDataType()
             returnType = returnToken.type
         }
