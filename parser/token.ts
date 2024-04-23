@@ -35,9 +35,10 @@ export enum TokenType {
     True = 'true',
     False = 'false',
 
-    Int32 = 'i32',
-    Float32 = 'f32',
-    None = 'none',
+    // Int32 = 'i32',
+    // Float32 = 'f32',
+    // None = 'none',
+    Type = 'type',
     
     NewLine = 'new line',
     EOF = 'eof'
@@ -85,15 +86,16 @@ export const keywords: Record<string, TokenType> = {
     'return': TokenType.Return,
     'true': TokenType.True,
     'false': TokenType.False,
-    'i32': TokenType.Int32,
-    'f32': TokenType.Float32,
-    'none': TokenType.None,
+    'i32': TokenType.Type,
+    'f32': TokenType.Type,
+    'none': TokenType.Type,
 }
 
 // Datatypes
-export type DataType = TokenType.Int32 | TokenType.Float32 | TokenType.None
+export type DataType = 'i32' | 'f32' | 'none'
 export type DataTypeToken = Token & {
-    type: DataType
+    type: TokenType.Type
+    literal: DataType
 }
 
 export type Operator = TokenType.Plus | TokenType.Minus | TokenType.Asterisk | TokenType.Slash

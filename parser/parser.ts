@@ -79,12 +79,14 @@ export class Parser {
     }
 
     private eqDataType(): boolean {
-        const token = this.eqAny([TokenType.Int32, TokenType.Float32, TokenType.None])
-        return token !== null ? true : false
+        return this.curToken.type === TokenType.Type
     }
 
     private matchDataType(): DataTypeToken {
-        return this.matchAny([TokenType.Int32, TokenType.Float32, TokenType.None]) as DataTypeToken
+        if (this.curToken.type === TokenType.Type) {
+            return this.consume() as DataTypeToken
+        }
+        throw new Error(`Parser error: Expected a data type, but got '${this.curToken.type}'`)
     }
 
     private getLocation(): SourceLocation {
@@ -171,11 +173,11 @@ export class Parser {
         const parameters = this.parseFnDeclarationParameters()
         this.match(TokenType.RightParen)
 
-        let returnType: DataType = TokenType.None // Default return type
+        let returnType: DataType = 'none' // Default return type
         if (this.eq(TokenType.RightArrow)) {      // scenario in which type exists
             this.match(TokenType.RightArrow)
             const returnToken = this.matchDataType()
-            returnType = returnToken.type
+            returnType = returnToken.literal
         }
 
         this.match(TokenType.LeftBrace)
@@ -202,7 +204,7 @@ export class Parser {
             }
 
             const dataTypeToken: DataTypeToken = this.matchDataType()
-            const dataType = dataTypeToken.type
+            const dataType = dataTypeToken.literal
 
             const param: Field = {
                 type: AstType.Field,
@@ -248,7 +250,7 @@ export class Parser {
 
         if (this.eqDataType()) {
             const dataTypeToken = this.matchDataType()
-            dataType = dataTypeToken.type
+            dataType = dataTypeToken.literal
         }
     
         if (this.eq(TokenType.Assignment)) {

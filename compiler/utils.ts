@@ -1,10 +1,10 @@
 import { binaryen } from '../deps.ts'
-import { TokenType, DataType } from '../parser/token.ts'
+import { DataType } from '../parser/token.ts'
 
 const dataTypeToWasmTypeMap: Record<DataType, binaryen.Type> = {
-    [TokenType.Int32]: binaryen.i32,
-    [TokenType.Float32]: binaryen.f32,
-    [TokenType.None]: binaryen.none
+    'i32': binaryen.i32,
+    'f32': binaryen.f32,
+    'none': binaryen.none
 }
 
 export function getWasmType(type: DataType): binaryen.Type {
