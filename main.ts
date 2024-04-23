@@ -42,8 +42,7 @@ function compileAndRun(src: string) {
 
     const visitor = new CodegenVisitor()
     const module = visitor.visit(ast)
-    const wat = module.emitText()
-    Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(wat))
+    Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(module.emitText()))
     
     if (!module.validate()) {
         console.error("Validation error: The module is invalid.")
@@ -53,15 +52,21 @@ function compileAndRun(src: string) {
     module.optimize()
     Deno.writeFileSync('./debug/output.js', new TextEncoder().encode(module.emitAsmjs()))
 
-    const wasmImports = {
+    const wasmModule = new WebAssembly.Module(module.emitBinary())
+    const wasmInstance = new WebAssembly.Instance(wasmModule, {
         env: {
             println: (value: number) => {
                 console.log(value)
             },
+            printstr: (stringPointer: number) => {
+                const memory = wasmInstance.exports.memory as WebAssembly.Memory
+                const buffer = new Uint8Array(memory.buffer, stringPointer)
+                const decoder = new TextDecoder()
+                const string = decoder.decode(buffer.subarray(0, buffer.indexOf(0)))
+                console.log(string)
+            }
         },
-    }
-    const wasmModule = new WebAssembly.Module(module.emitBinary())
-    const wasmInstance = new WebAssembly.Instance(wasmModule, wasmImports)
+    })
     
     console.log('Program output:')
     const main = wasmInstance.exports.main as CallableFunction
