@@ -33,11 +33,16 @@ export class Lexer {
     constructor(private src: string) {}
 
     private advance(): string {
-        if (this.index <= this.src.length) {
+        if (this.index < this.src.length) {
+            if (/\r?\n/.test(this.current())) {
+                this.column = 1
+                this.line++
+            } else {
+                this.column++
+            }
             this.index++
-            this.column++
         }
-        return this.src[this.index]
+        return this.current()
     }
 
     private current(): string {
@@ -56,17 +61,13 @@ export class Lexer {
     }
 
     private skipWhitespace() {
-        while (isWhitespace(this.current())) {
-            if (this.current() === '\n') {
-                this.line++
-                this.column = 0
-            }
+        while (!this.eof() && isWhitespace(this.current())) {
             this.advance()
         }
     }
 
     private skipComment() {
-        while (this.current() !== '\n' && this.current() !== '\r') {
+        while (!this.eof() && this.current() !== '\n' && this.current() !== '\r') {
             this.advance()
         }
         this.skipWhitespace()
@@ -76,8 +77,8 @@ export class Lexer {
         return {
             type,
             line: this.line,
-            column: this.column,
-            literal: (literal == undefined) ? '' : literal
+            column: this.column - (literal?.length || 1),
+            literal: literal || ''
         }
     }
 
@@ -115,6 +116,19 @@ export class Lexer {
         return this.newToken(lookupIdentifier(literal), literal)
     }
 
+    private readString(): Token {
+        let literal = ''
+        this.advance()
+
+        while (!this.eof() && this.current() !== "'") {
+            literal += this.current()
+            this.advance()
+        }
+        
+        // this.advance()
+        return this.newToken(TokenType.String, literal)
+    }
+
     private readMultiChar(): Token {
         const chars = this.current() + this.peek(1)
         const tokenType = multiCharTokenList[chars]
@@ -144,6 +158,10 @@ export class Lexer {
                 token = this.readIdentifier()
                 break
             }
+            else if (this.current() === "'") {
+                token = this.readString()
+                break
+            }
             else if (this.current()+this.peek(1) in multiCharTokenList) {
                 token = this.readMultiChar()
                 break
@@ -162,12 +180,14 @@ export class Lexer {
         return token
     }
 
-    peekToken() {
+    peekToken(): Token {
         const currentIndex = this.index
         const currentLine = this.line
+        const currentColumn = this.column
         const token = this.nextToken()
         this.index = currentIndex
         this.line = currentLine
+        this.column = currentColumn
         return token
     }
 }

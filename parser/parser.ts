@@ -24,7 +24,8 @@ import {
     Spec,
     SourceLocation,
     AstType,
-    UnaryExpression
+    UnaryExpression,
+    StringLiteral
 } from './ast.ts'
 
 export class Parser {
@@ -45,6 +46,7 @@ export class Parser {
     private consume(): Token {
         const prev = this.curToken
         this.curToken = this.lexer.nextToken()
+        // console.log(this.curToken)
         return prev
     }
 
@@ -64,7 +66,7 @@ export class Parser {
         if (this.eq(type)) {
             return this.consume()
         }
-        throw Error(`Parser error: Expected '${type}', but got '${this.curToken.type}'`)
+        throw Error(`Parser error: Expected '${type}', but got '${this.curToken.type}' at line ${this.curToken.line} column ${this.curToken.column}`)
     }
 
     private matchAny(types: TokenType[]): Token {
@@ -100,16 +102,22 @@ export class Parser {
 
     parseProgram(): Program {
         const statements: Statement[] = []
-        
-        while (!this.eof()) {
-            const statement = this.parseStatement()
-            statements.push(statement)
-        }
-
-        return {
-            type: AstType.Program,
-            statements,
-            location: this.getLocation()
+        try {
+            
+            while (!this.eof()) {
+                const statement = this.parseStatement()
+                statements.push(statement)
+            }
+    
+            return {
+                type: AstType.Program,
+                statements,
+                location: this.getLocation()
+            }
+        } catch (err) {
+            const error = err as Error
+            console.log(error.message)
+            Deno.exit(1)
         }
     }
 
@@ -305,6 +313,8 @@ export class Parser {
         switch (this.curToken.type) {
             case TokenType.Number:
                 return this.parseIntegerLiteral()
+            case TokenType.String:
+                return this.parseStringLiteral()
             case TokenType.Identifier:
                 return this.parseIdentifier()
             case TokenType.Minus:
@@ -312,7 +322,7 @@ export class Parser {
             case TokenType.LeftParen:
                 return this.parseGroupedExpression()
         }
-        throw new Error('Error')
+        throw new Error(`Parser error: No prefix found ${this.curToken.literal}`)
     }
 
     private parseInfixExpression(left: Expression): Expression {
@@ -377,6 +387,14 @@ export class Parser {
         return {
             type: AstType.IntegerLiteral,
             value: parseInt(this.consume().literal),
+            location: this.getLocation()
+        }
+    }
+
+    private parseStringLiteral(): StringLiteral {
+        return {
+            type: AstType.StringLiteral,
+            value: this.consume().literal,
             location: this.getLocation()
         }
     }

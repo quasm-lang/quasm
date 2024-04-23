@@ -19,6 +19,7 @@ export enum AstType {
     BinaryExpression = 'BINARY_EXPRESSION',
     Identifier = 'IDENTIFIER',
     IntegerLiteral = 'INTEGER_LITERAL',
+    StringLiteral = 'STRING_LITERAL',
     Field = 'FIELD',
     Spec = 'SPEC'
 }
@@ -118,6 +119,11 @@ export interface Spec extends Node {
 export interface IntegerLiteral extends Expression {
     type: AstType.IntegerLiteral
     value: number
+}
+
+export interface StringLiteral extends Expression {
+    type: AstType.StringLiteral
+    value: string
 }
 
 export interface Identifier extends Expression {

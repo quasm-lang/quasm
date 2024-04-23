@@ -13,7 +13,8 @@ import {
     BinaryExpression,
     CallExpression,
     IntegerLiteral,
-    Identifier
+    Identifier,
+    StringLiteral
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../parser/token.ts'
 import { getWasmType } from './utils.ts'
@@ -22,9 +23,12 @@ export class CodegenVisitor {
     private module: binaryen.Module
     private scopes: Map<string, { type: DataType; index: number, reason: string }>[] = []
     private functionReturnTypes: Map<string, binaryen.Type> = new Map()
-    
+    private memoryOffset = 0
+    private segment: binaryen.MemorySegment[] = []
+
     constructor() {
         this.module = new binaryen.Module()
+        
         this.module.addFunctionImport(
             'println',
             'env',
@@ -32,17 +36,29 @@ export class CodegenVisitor {
             binaryen.i32,
             binaryen.none
         )
+        
+        this.module.addFunctionImport(
+            'printstr',
+            'env',
+            'printstr',
+            binaryen.createType([binaryen.i32]),
+            binaryen.none
+        )
+
     }
-
+    
     public visit(node: Node) {
-        switch (node.type) {
-            case AstType.Program:
-                this.visitProgram(node as Program)
-                break
-            default:
-                throw new Error(`Unhandled node type: ${node.type}`)
+        if (node.type !== AstType.Program) {
+            throw new Error(`Not valid program: ${node.type}`)
         }
-
+        try {
+            this.visitProgram(node as Program)
+        } catch (err) {
+            const error = err as Error
+            console.log(error)
+            Deno.exit(1)
+        }
+        this.module.setMemory(1, 1, 'memory', this.segment)
         return this.module
     }
 
@@ -59,7 +75,7 @@ export class CodegenVisitor {
     private visitStatement(statement: Statement): binaryen.ExpressionRef {
         switch (statement.type) {
             case AstType.ExpressionStatement:
-                return this.visitExpression((statement as ExpressionStatement).expression as Expression)
+                return this.visitExpressionStatement(statement as ExpressionStatement)
             case AstType.LetStatement:
                 return this.visitLetStatement(statement as LetStatement)
             case AstType.FnStatement:
@@ -140,6 +156,19 @@ export class CodegenVisitor {
     private visitReturnStatement(statement: ReturnStatement) {
         return this.module.return(this.visitExpression(statement.value))
     }
+
+    private visitExpressionStatement(statement: ExpressionStatement) {
+        const expression = this.visitExpression(statement.expression)
+
+        switch (statement.expression.type) {
+            case AstType.Identifier:
+            case AstType.IntegerLiteral:
+            case AstType.BinaryExpression:
+                return this.module.drop(expression)
+        }
+
+        return expression
+    }
     
     private visitExpression(expression: Expression): binaryen.ExpressionRef {
         switch (expression.type) {
@@ -147,11 +176,13 @@ export class CodegenVisitor {
                 return this.visitBinaryExpression(expression as BinaryExpression)
             case AstType.IntegerLiteral:
                 return this.visitNumerical(expression as IntegerLiteral)
+            case AstType.StringLiteral:
+                return this.visitStringLiteral(expression as StringLiteral)
+            case AstType.Identifier:
+                    return this.visitIdentifier(expression as Identifier)
             case AstType.CallExpression:
                 return this.visitCallExpression(expression as CallExpression)
             // Add cases for other expression types as needed
-            case AstType.Identifier:
-                return this.visitIdentifier(expression as Identifier)
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
         }
@@ -166,7 +197,11 @@ export class CodegenVisitor {
         if (expression.callee.value === 'println') {
             const printArgs = [args[0]] // Pass the first argument to the print function
             return this.module.call('println', printArgs, binaryen.none)
-        } else {
+        } else if (expression.callee.value === 'printstr') {
+            const printArgs = [args[0]]
+            return this.module.call('printstr', printArgs, binaryen.none)
+        }
+        else {
             return (this.module.call(expression.callee.value, args, returnType!)) // IMPORTANT!!!!!!
         }
     }
@@ -176,13 +211,13 @@ export class CodegenVisitor {
         const right = this.visitExpression(node.right)
     
         switch (node.operator) {
-            case '+':
+            case TokenType.Plus:
                 return this.module.i32.add(left, right)
-            case '-':
+            case TokenType.Minus:
                 return this.module.i32.sub(left, right)
-            case '*':
+            case TokenType.Asterisk:
                 return this.module.i32.mul(left, right)
-            case '/':
+            case TokenType.Slash:
                 return this.module.i32.div_s(left, right)
             default:
                 throw new Error(`Unhandled binary operator: ${node.operator}`)
@@ -192,6 +227,27 @@ export class CodegenVisitor {
     private visitNumerical(node: IntegerLiteral): binaryen.ExpressionRef {
         return this.module.i32.const(node.value)
     }
+
+    // Returns initial pointer of string
+    private visitStringLiteral(node: StringLiteral): binaryen.ExpressionRef {
+        const encodedString = new TextEncoder().encode(node.value)
+        const stringPointer = this.module.i32.const(this.memoryOffset)
+
+        // Create a new memory segment for the string data
+        const stringSegment: binaryen.MemorySegment = {
+            offset: stringPointer,
+            data: new Uint8Array([...encodedString, 0]) // add null terminator
+        }
+
+        // Append the string segment to the existing segment array
+        this.segment.push(stringSegment)
+
+        // Update the memory offset
+        this.memoryOffset += encodedString.length + 1 // including the null terminator
+        
+        return stringPointer
+    }
+    
 
     private visitIdentifier(node: Identifier): binaryen.ExpressionRef {
         // Find the identifier in the current scope stack
