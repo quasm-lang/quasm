@@ -208,19 +208,9 @@ export class CodegenVisitor {
     // TODO (IMPORTANT!): Need to distinguish between function call into assignment vs just calling the function, if it's just calling the function module has to drop
     private visitCallExpression(expression: CallExpression): binaryen.ExpressionRef {
         const args = expression.arguments.map(arg => this.visitExpression(arg))
-        // Look up the return type of the function being called
-        const returnType = this.functionReturnTypes.get(expression.callee.value)
-        
-        if (expression.callee.value === 'println') {
-            const printArgs = [args[0]] // Pass the first argument to the print function
-            return this.module.call('println', printArgs, binaryen.none)
-        } else if (expression.callee.value === 'printstr') {
-            const printArgs = [args[0]]
-            return this.module.call('printstr', printArgs, binaryen.none)
-        }
-        else {
-            return (this.module.call(expression.callee.value, args, returnType!)) // IMPORTANT!!!!!!
-        }
+        const returnType = binaryen.getFunctionInfo(this.module.getFunction(expression.callee.value)).results
+        const callExpr = this.module.call(expression.callee.value, args, returnType)
+        return callExpr
     }
     
     private visitUnaryExpression(expr: UnaryExpression): binaryen.ExpressionRef {
