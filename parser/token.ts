@@ -34,10 +34,6 @@ export enum TokenType {
     Return = 'return',
     True = 'true',
     False = 'false',
-
-    // Int32 = 'i32',
-    // Float32 = 'f32',
-    // None = 'none',
     Type = 'type',
     
     NewLine = 'new line',
@@ -92,7 +88,12 @@ export const keywords: Record<string, TokenType> = {
 }
 
 // Datatypes
-export type DataType = 'i32' | 'f32' | 'none'
+// export type DataType = 'i32' | 'f32' | 'none'
+export enum DataType {
+    i32 = 'i32',
+    f32 = 'f32',
+    none = 'none'
+}
 export type DataTypeToken = Token & {
     type: TokenType.Type
     literal: DataType
