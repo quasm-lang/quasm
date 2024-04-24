@@ -25,7 +25,8 @@ import {
     SourceLocation,
     AstType,
     UnaryExpression,
-    StringLiteral
+    StringLiteral,
+    AssignmentStatement
 } from './ast.ts'
 
 export class Parser {
@@ -124,20 +125,17 @@ export class Parser {
     }
 
     private parseStatement(): Statement {
-        let statement: Statement
-
         if (this.eq(TokenType.Fn)) {
-            statement = this.parseFnStatement()
+            return this.parseFnStatement()
         } else if (this.eq(TokenType.Return)) {
-            statement = this.parseReturnStatement()
+            return this.parseReturnStatement()
         } else if (this.eq(TokenType.Let)) {
-            statement = this.parseLetStatement()
+            return this.parseLetStatement()
+        } else if (this.peekEq(TokenType.Assignment)) {
+            return this.parseAssignmentStatement()
+        } else {
+            return this.parseExpressionStatement()
         }
-        else {
-            statement = this.parseExpressionStatement()
-        }
-
-        return statement
     }
 
     private parseBlockStatement(): BlockStatement {
@@ -173,7 +171,7 @@ export class Parser {
         const parameters = this.parseFnDeclarationParameters()
         this.match(TokenType.RightParen)
 
-        let returnType: DataType = 'none' // Default return type
+        let returnType: DataType = DataType.none // Default return type
         if (this.eq(TokenType.RightArrow)) {      // scenario in which type exists
             this.match(TokenType.RightArrow)
             const returnToken = this.matchDataType()
@@ -271,6 +269,26 @@ export class Parser {
         return {
             type: AstType.LetStatement,
             spec,
+            location: this.getLocation()
+        }
+    }
+
+    private parseAssignmentStatement(): AssignmentStatement {
+        const name: Identifier = {
+            type: AstType.Identifier,
+            value: this.match(TokenType.Identifier).literal,
+            location: this.getLocation()
+        }
+
+        this.match(TokenType.Assignment)
+        const value = this.parseExpression()
+
+        this.match(TokenType.Semicolon)
+
+        return {
+            type: AstType.AssignmentStatement,
+            name,
+            value,
             location: this.getLocation()
         }
     }
@@ -412,7 +430,7 @@ export class Parser {
     private parseUnaryExpression(): UnaryExpression {
         return {
             type: AstType.UnaryExpression,
-            operator: this.curToken.type,
+            operator: this.consume().type,
             right: this.parseExpression(),
             location: this.getLocation()
         }

@@ -11,9 +11,9 @@ export enum AstType {
     ExpressionStatement = 'EXPRESSION_STATEMENT',
     FnStatement = 'FN_STATEMENT',
     ReturnStatement = 'RETURN_STATEMENT',
+    AssignmentStatement = 'ASSIGNMENT_STATEMENT',
     PrefixExpression = 'PREFIX_EXPRESSION',
     InfixExpression = 'INFIX_EXPRESSION',
-    AssignmentExpression = 'ASSIGNMENT_EXPRESSION',
     CallExpression = 'CALL_EXPRESSION',
     UnaryExpression = 'UNARY_EXPRESSION',
     BinaryExpression = 'BINARY_EXPRESSION',
@@ -77,13 +77,13 @@ export interface ReturnStatement extends Statement {
     value: Expression
 }
 
-// Expressions
-export interface AssignmentExpression extends Expression {
-    type: AstType.AssignmentExpression
+export interface AssignmentStatement extends Statement {
+    type: AstType.AssignmentStatement
     name: Identifier
     value: Expression
 }
 
+// Expressions
 export interface CallExpression extends Expression {
     type: AstType.CallExpression
     callee: Identifier

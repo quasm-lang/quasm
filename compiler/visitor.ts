@@ -14,7 +14,9 @@ import {
     CallExpression,
     IntegerLiteral,
     Identifier,
-    StringLiteral
+    StringLiteral,
+    AssignmentStatement,
+    UnaryExpression
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../parser/token.ts'
 import { getWasmType } from './utils.ts'
@@ -82,8 +84,10 @@ export class CodegenVisitor {
                 return this.visitFnStatement(statement as FnStatement)
             case AstType.ReturnStatement:
                 return this.visitReturnStatement(statement as ReturnStatement)
+            case AstType.AssignmentStatement:
+                return this.visitAssignmentStatement(statement as AssignmentStatement)
             default:
-                throw new Error(`Unhandled statement type: ${statement.type}`);
+                throw new Error(`Unhandled statement type: ${statement.type}`)
         }
     }
 
@@ -104,7 +108,7 @@ export class CodegenVisitor {
         }
 
         const index = this.scopes[this.scopes.length - 1].size
-        this.scopes[this.scopes.length - 1].set(name, { type: TokenType.Int32, index, reason: 'declaration' })
+        this.scopes[this.scopes.length - 1].set(name, { type: dataType || DataType.i32, index, reason: 'declaration' })
         return this.module.local.set(index, initExpr)
     }
 
@@ -118,8 +122,7 @@ export class CodegenVisitor {
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            // locals.push(this.module.local.get(param.value, binaryen.i32));
-            this.scopes[this.scopes.length-1].set(param.name.value, { type: TokenType.Int32, index, reason: 'parameter' })
+            this.scopes[this.scopes.length-1].set(param.name.value, { type: param.dataType, index, reason: 'parameter' })
         }
 
         // handle return type
@@ -153,11 +156,26 @@ export class CodegenVisitor {
         return wasmFunc
     }
 
-    private visitReturnStatement(statement: ReturnStatement) {
+    private visitReturnStatement(statement: ReturnStatement): binaryen.ExpressionRef {
         return this.module.return(this.visitExpression(statement.value))
     }
 
-    private visitExpressionStatement(statement: ExpressionStatement) {
+    private visitAssignmentStatement(statement: AssignmentStatement): binaryen.ExpressionRef {
+        const name = statement.name.value
+        const value = this.visitExpression(statement.value)
+
+        // Find the identifier in the current scope stack
+        for (let i = this.scopes.length - 1; i >= 0; i--) {
+            if (this.scopes[i].has(name)) {
+                const index = this.scopes[i].get(name)
+                if (index === undefined) throw new Error(`Index for variable ${name} is undefined`)
+                return this.module.local.set(index.index, value)
+            }
+        }
+        throw new Error(`Variable ${name} not found in scope`)
+    }
+
+    private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
         const expression = this.visitExpression(statement.expression)
 
         switch (statement.expression.type) {
@@ -170,21 +188,23 @@ export class CodegenVisitor {
         return expression
     }
     
-    private visitExpression(expression: Expression): binaryen.ExpressionRef {
-        switch (expression.type) {
+    private visitExpression(expr: Expression): binaryen.ExpressionRef {
+        switch (expr.type) {
+            case AstType.UnaryExpression:
+                return this.visitUnaryExpression(expr as UnaryExpression)
             case AstType.BinaryExpression:
-                return this.visitBinaryExpression(expression as BinaryExpression)
+                return this.visitBinaryExpression(expr as BinaryExpression)
             case AstType.IntegerLiteral:
-                return this.visitNumerical(expression as IntegerLiteral)
+                return this.visitNumerical(expr as IntegerLiteral)
             case AstType.StringLiteral:
-                return this.visitStringLiteral(expression as StringLiteral)
+                return this.visitStringLiteral(expr as StringLiteral)
             case AstType.Identifier:
-                    return this.visitIdentifier(expression as Identifier)
+                    return this.visitIdentifier(expr as Identifier)
             case AstType.CallExpression:
-                return this.visitCallExpression(expression as CallExpression)
+                return this.visitCallExpression(expr as CallExpression)
             // Add cases for other expression types as needed
             default:
-                throw new Error(`Unhandled expression type: ${expression.type}`)
+                throw new Error(`Unhandled expression type: ${expr.type}`)
         }
     }
 
@@ -203,6 +223,17 @@ export class CodegenVisitor {
         }
         else {
             return (this.module.call(expression.callee.value, args, returnType!)) // IMPORTANT!!!!!!
+        }
+    }
+    
+    private visitUnaryExpression(expr: UnaryExpression): binaryen.ExpressionRef {
+        const right = this.visitExpression(expr.right)
+        
+        switch (expr.operator) {
+            case TokenType.Minus:
+                return this.module.i32.sub(this.module.i32.const(0), right)
+            default:
+                throw new Error(`Unhandled unary operator ${expr.operator}`)
         }
     }
     
@@ -230,20 +261,20 @@ export class CodegenVisitor {
 
     // Returns initial pointer of string
     private visitStringLiteral(node: StringLiteral): binaryen.ExpressionRef {
-        const encodedString = new TextEncoder().encode(node.value)
+        const encodedString = new TextEncoder().encode(node.value + '\0') // includes the null terminator
         const stringPointer = this.module.i32.const(this.memoryOffset)
 
         // Create a new memory segment for the string data
         const stringSegment: binaryen.MemorySegment = {
             offset: stringPointer,
-            data: new Uint8Array([...encodedString, 0]) // add null terminator
+            data: encodedString
         }
 
         // Append the string segment to the existing segment array
         this.segment.push(stringSegment)
 
         // Update the memory offset
-        this.memoryOffset += encodedString.length + 1 // including the null terminator
+        this.memoryOffset += encodedString.length
         
         return stringPointer
     }
