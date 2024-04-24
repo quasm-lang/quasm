@@ -19,17 +19,17 @@ import {
     UnaryExpression
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../parser/token.ts'
-import { getWasmType } from './utils.ts'
+import { getWasmType, ScopeData, ScopeStack } from './utils.ts'
 
 export class CodegenVisitor {
     private module: binaryen.Module
-    private scopes: Map<string, { type: DataType; index: number, reason: string }>[] = []
-    private functionReturnTypes: Map<string, binaryen.Type> = new Map()
+    private scopeStack: ScopeStack
     private memoryOffset = 0
     private segment: binaryen.MemorySegment[] = []
 
     constructor() {
         this.module = new binaryen.Module()
+        this.scopeStack = new ScopeStack()
         
         this.module.addFunctionImport(
             'println',
@@ -107,8 +107,9 @@ export class CodegenVisitor {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
         }
 
-        const index = this.scopes[this.scopes.length - 1].size
-        this.scopes[this.scopes.length - 1].set(name, { type: dataType || DataType.i32, index, reason: 'declaration' })
+        const index = this.scopeStack.index()
+        this.scopeStack.set(name, { type: dataType || DataType.i32, index, reason: 'declaration' })
+        
         return this.module.local.set(index, initExpr)
     }
 
@@ -117,17 +118,16 @@ export class CodegenVisitor {
 
         // handle parameters
         const params = []
-        const newScope = new Map<string, { type: DataType; index: number; reason: string }>()
-        this.scopes.push(newScope)
+        const newScope = new Map<string, ScopeData>()
+        this.scopeStack.push(newScope)
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            this.scopes[this.scopes.length-1].set(param.name.value, { type: param.dataType, index, reason: 'parameter' })
+            this.scopeStack.set(param.name.value, { type: param.dataType, index, reason: 'parameter' })
         }
 
         // handle return type
         const returnType = getWasmType(func.returnType)
-        this.functionReturnTypes.set(func.name.value, returnType)
 
         // handle body
         const statements = func.body.statements.map(statement => this.visitStatement(statement))
@@ -135,7 +135,7 @@ export class CodegenVisitor {
 
         // handles declared variables in the body
         const vars: binaryen.ExpressionRef[] = []
-        for (const [_name, value] of this.scopes[this.scopes.length-1]) {
+        for (const [_name, value] of this.scopeStack.last()) {
             if (value.reason === 'declaration') {
                 vars.push(getWasmType(value.type))
             }
@@ -149,7 +149,7 @@ export class CodegenVisitor {
             block
         )
         
-        this.scopes.pop()
+        this.scopeStack.pop()
         // for now all functions will be exported automatically
         this.module.addFunctionExport(name, name)
 
@@ -165,14 +165,8 @@ export class CodegenVisitor {
         const value = this.visitExpression(statement.value)
 
         // Find the identifier in the current scope stack
-        for (let i = this.scopes.length - 1; i >= 0; i--) {
-            if (this.scopes[i].has(name)) {
-                const index = this.scopes[i].get(name)
-                if (index === undefined) throw new Error(`Index for variable ${name} is undefined`)
-                return this.module.local.set(index.index, value)
-            }
-        }
-        throw new Error(`Variable ${name} not found in scope`)
+        const index = this.scopeStack.findIndex(name)
+        return this.module.local.set(index, value)
     }
 
     private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
@@ -282,13 +276,7 @@ export class CodegenVisitor {
 
     private visitIdentifier(node: Identifier): binaryen.ExpressionRef {
         // Find the identifier in the current scope stack
-        for (let i = this.scopes.length - 1; i >= 0; i--) {
-            if (this.scopes[i].has(node.value)) {
-                const index = this.scopes[i].get(node.value)
-                if (index === undefined) throw new Error(`Index for variable ${node.value} is undefined`)
-                return this.module.local.get(index.index, binaryen.i32) // Assuming i32 for simplicity
-            }
-        }
-        throw new Error(`Variable ${node.value} not found in any scope`)
+        const index = this.scopeStack.findIndex(identifier.value)
+        return this.module.local.get(index, binaryen.i32) // Assuming i32 for simplicity
     }
 }
