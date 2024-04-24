@@ -61,14 +61,13 @@ function compileAndRun(src: string) {
             printstr: (stringPointer: number) => {
                 const memory = wasmInstance.exports.memory as WebAssembly.Memory
                 const buffer = new Uint8Array(memory.buffer, stringPointer)
-                const decoder = new TextDecoder()
-                const string = decoder.decode(buffer.subarray(0, buffer.indexOf(0)))
+                const string = new TextDecoder().decode(buffer.subarray(0, buffer.indexOf(0)))
                 console.log(string)
             }
         },
     })
     
-    console.log('Program output:')
+    console.log('>')
     const main = wasmInstance.exports.main as CallableFunction
     main()
 }
