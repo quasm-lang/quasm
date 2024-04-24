@@ -251,14 +251,11 @@ export class CodegenVisitor {
         const encodedString = new TextEncoder().encode(node.value + '\0') // includes the null terminator
         const stringPointer = this.module.i32.const(this.memoryOffset)
 
-        // Create a new memory segment for the string data
-        const stringSegment: binaryen.MemorySegment = {
+        // Append the string segment to the existing segment array
+        this.segment.push({
             offset: stringPointer,
             data: encodedString
-        }
-
-        // Append the string segment to the existing segment array
-        this.segment.push(stringSegment)
+        })
 
         // Update the memory offset
         this.memoryOffset += encodedString.length
@@ -268,7 +265,6 @@ export class CodegenVisitor {
     
 
     private visitIdentifier(identifier: Identifier): binaryen.ExpressionRef {
-        // Find the identifier in the current scope stack
         const index = this.scopeStack.findIndex(identifier.value)
         return this.module.local.get(index, binaryen.i32) // Assuming i32 for simplicity
     }

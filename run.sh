@@ -1,1 +1,1 @@
-deno run --allow-read=. --allow-write main.ts $@
+deno run --allow-read=. --allow-write src/main.ts $@
