@@ -54,7 +54,8 @@ export class CodegenVisitor {
             throw new Error(`Not valid program: ${node.type}`)
         }
         try {
-            this.visitProgram(node as Program)
+            const _program = this.visitProgram(node as Program)
+            // console.log(_program)
         } catch (err) {
             const error = err as Error
             console.log(error)
@@ -175,8 +176,9 @@ export class CodegenVisitor {
         switch (statement.expression.type) {
             case AstType.Identifier:
             case AstType.IntegerLiteral:
-            case AstType.BinaryExpression:
+            case AstType.BinaryExpression: {
                 return this.module.drop(expression)
+            }
         }
 
         return expression
@@ -274,7 +276,7 @@ export class CodegenVisitor {
     }
     
 
-    private visitIdentifier(node: Identifier): binaryen.ExpressionRef {
+    private visitIdentifier(identifier: Identifier): binaryen.ExpressionRef {
         // Find the identifier in the current scope stack
         const index = this.scopeStack.findIndex(identifier.value)
         return this.module.local.get(index, binaryen.i32) // Assuming i32 for simplicity
