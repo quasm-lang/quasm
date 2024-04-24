@@ -67,11 +67,12 @@ export class CodegenVisitor {
 
     private visitProgram(program: Program): binaryen.ExpressionRef[] {
         const statements: binaryen.ExportRef[] = []
-        
         for (const statement of program.statements) {
+            if (statement.type !== AstType.FnStatement) {
+                throw new Error(`Invalid statement outside of function at line ${statement.location.start.line}`)
+            }
             statements.push(this.visitStatement(statement))
         }
-
         return statements
     }
 
