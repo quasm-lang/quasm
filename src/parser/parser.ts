@@ -125,7 +125,9 @@ export class Parser {
     }
 
     private parseStatement(): Statement {
-        if (this.eq(TokenType.Fn)) {
+        if (this.eq(TokenType.Export)) {
+            return this.parseExport()
+        } else if (this.eq(TokenType.Fn)) {
             return this.parseFnStatement()
         } else if (this.eq(TokenType.Return)) {
             return this.parseReturnStatement()
@@ -156,6 +158,18 @@ export class Parser {
             statements,
             location: this.getLocation()
         }
+    }
+
+    private parseExport(): FnStatement {
+        this.match(TokenType.Export)
+        
+        if (this.eq(TokenType.Fn)) {
+            const statement = this.parseFnStatement()
+            statement.exported = true
+            return statement
+        }
+
+        throw new Error('Parser error: Unexpected token after export.')
     }
 
     private parseFnStatement(): FnStatement {
