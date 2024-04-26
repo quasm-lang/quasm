@@ -187,6 +187,7 @@ export class Parser {
             parameters,
             returnType,
             body: block,
+            exported: false,
             location: this.getLocation()
         }
     }
