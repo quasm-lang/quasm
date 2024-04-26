@@ -1,6 +1,6 @@
 import {
     DataType,
-    Operator,
+    InfixOperator,
     TokenType
 } from './token.ts'
 
@@ -100,7 +100,7 @@ export interface UnaryExpression extends Expression {
 export interface BinaryExpression extends Expression {
     type: AstType.BinaryExpression
     left: Expression
-    operator: Operator
+    operator: InfixOperator
     right: Expression
 }
 

@@ -2,6 +2,7 @@ export enum TokenType {
     Number = 'num',
     Identifier = 'identifier',
     String = 'string',
+    Type = 'type',
     
     Plus = '+',
     Minus = '-',
@@ -34,8 +35,13 @@ export enum TokenType {
     Return = 'return',
     True = 'true',
     False = 'false',
-    Type = 'type',
+    If = 'if',
+    Else = 'else',
+    While = 'while',
     Export = 'export',
+    Global = 'global',
+    Import = 'import',
+    From = 'from',
     
     NewLine = 'new line',
     EOF = 'eof'
@@ -78,21 +84,31 @@ export const multiCharTokenList: Record<string, TokenType> = {
 
 // Keywords
 export const keywords: Record<string, TokenType> = {
+    'i32': TokenType.Type,
+    'i64': TokenType.Type,
+    'f32': TokenType.Type,
+    'f64': TokenType.Type,
+    'none': TokenType.Type,
     'let': TokenType.Let,
     'fn': TokenType.Fn,
     'return': TokenType.Return,
     'true': TokenType.True,
     'false': TokenType.False,
-    'i32': TokenType.Type,
-    'f32': TokenType.Type,
-    'none': TokenType.Type,
-    'export': TokenType.Export
+    'if': TokenType.If,
+    'else': TokenType.Else,
+    'while': TokenType.While,
+    'export': TokenType.Export,
+    'global': TokenType.Global,
+    'import': TokenType.Import,
+    'from': TokenType.From
 }
 
 // Datatypes
 export enum DataType {
     i32 = 'i32',
+    i64 = 'i64',
     f32 = 'f32',
+    f64 = 'f64',
     none = 'none'
 }
 export type DataTypeToken = Token & {
@@ -100,4 +116,4 @@ export type DataTypeToken = Token & {
     literal: DataType
 }
 
-export type Operator = TokenType.Plus | TokenType.Minus | TokenType.Asterisk | TokenType.Slash
+export type InfixOperator = TokenType.Plus | TokenType.Minus | TokenType.Asterisk | TokenType.Slash
