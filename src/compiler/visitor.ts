@@ -109,7 +109,7 @@ export class CodegenVisitor {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
         }
         
-        const index = this.scopeStack.index()
+        const index = this.scopeStack.currentScopeLastIndex()
         this.scopeStack.set(name, { type: dataType || DataType.i32, index, reason: 'declaration' })
         
         return this.module.local.set(index, initExpr)

@@ -18,7 +18,7 @@ export interface ScopeData {
 }
 
 export class ScopeStack {
-    private scopes: Map<string, ScopeData>[] = [];
+    private scopes: Map<string, ScopeData>[] = []
 
     push(newScope: Map<string, ScopeData>) {
         this.scopes.push(newScope)
@@ -40,13 +40,13 @@ export class ScopeStack {
     get(name: string): ScopeData | undefined {
         for (let i = this.scopes.length - 1; i >= 0; i--) {
             if (this.scopes[i].has(name)) {
-                return this.scopes[i].get(name);
+                return this.scopes[i].get(name)
             }
         }
         return undefined;
     }
 
-    index(): number {
+    currentScopeLastIndex(): number {
         return this.scopes[this.scopes.length - 1].size
     }
 
@@ -55,7 +55,6 @@ export class ScopeStack {
             if (this.scopes[i].has(name)) {
                 const index = this.scopes[i].get(name)
                 if (index === undefined) throw new Error(`Index for variable ${name} is undefined`)
-                // return this.module.local.set(index.index, value)
                 return index.index
             }
         }
