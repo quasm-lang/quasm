@@ -97,7 +97,7 @@ export class CodegenVisitor {
         const name = statement.spec.name.value
         const dataType = statement.spec.dataType
         const value = statement.spec.value
-
+        
         if (dataType === undefined && value === undefined) {
             throw new Error(`Illegal let declaration!`)
         }
@@ -108,7 +108,7 @@ export class CodegenVisitor {
         } else {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
         }
-
+        
         const index = this.scopeStack.index()
         this.scopeStack.set(name, { type: dataType || DataType.i32, index, reason: 'declaration' })
         
@@ -152,8 +152,11 @@ export class CodegenVisitor {
         )
         
         this.scopeStack.pop()
-        // for now all functions will be exported automatically
-        this.module.addFunctionExport(name, name)
+
+        // dynamically export based on modifier
+        if (name === 'main' || func.exported) {
+            this.module.addFunctionExport(name, name)
+        }
 
         return wasmFunc
     }

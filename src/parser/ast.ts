@@ -70,6 +70,7 @@ export interface FnStatement extends Statement {
     parameters: Field[]
     returnType: DataType
     body: BlockStatement
+    exported: boolean
 }
 
 export interface ReturnStatement extends Statement {

@@ -35,6 +35,7 @@ export enum TokenType {
     True = 'true',
     False = 'false',
     Type = 'type',
+    Export = 'export',
     
     NewLine = 'new line',
     EOF = 'eof'
@@ -85,6 +86,7 @@ export const keywords: Record<string, TokenType> = {
     'i32': TokenType.Type,
     'f32': TokenType.Type,
     'none': TokenType.Type,
+    'export': TokenType.Export
 }
 
 // Datatypes
