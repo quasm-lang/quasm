@@ -2,7 +2,7 @@ import { Lexer } from './parser/lexer.ts'
 import { Parser } from './parser/parser.ts'
 import { CodegenVisitor } from './compiler/visitor.ts'
 
-import { Command } from 'npm:commander'
+import { Command } from './deps.ts'
 import { ensureDirSync } from 'https://deno.land/std@0.223.0/fs/mod.ts'
 
 const program = new Command()
@@ -66,7 +66,7 @@ function compileAndRun(src: string) {
             }
         },
     })
-    
+
     console.log('>')
     const main = wasmInstance.exports.main as CallableFunction
     main()
