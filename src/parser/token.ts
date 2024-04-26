@@ -90,7 +90,6 @@ export const keywords: Record<string, TokenType> = {
 }
 
 // Datatypes
-// export type DataType = 'i32' | 'f32' | 'none'
 export enum DataType {
     i32 = 'i32',
     f32 = 'f32',
