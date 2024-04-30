@@ -45,7 +45,7 @@ export class ScopeStack {
                 return this.scopes[i].get(name)
             }
         }
-        return undefined;
+        return undefined
     }
 
     currentScopeLastIndex(): number {
