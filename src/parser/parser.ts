@@ -29,6 +29,21 @@ import {
     AssignmentStatement
 } from './ast.ts'
 
+function getPrecedence(type: TokenType): number {
+    switch (type) {
+      case TokenType.Asterisk:
+      case TokenType.Slash:
+        return 3
+      case TokenType.Plus:
+      case TokenType.Minus:
+        return 2
+      case TokenType.LeftParen:
+        return 1
+      default:
+        return 0
+    }
+}
+
 export class Parser {
     private curToken: Token
     
@@ -40,9 +55,9 @@ export class Parser {
         return this.curToken.type == TokenType.EOF
     }
 
-    private peek(): Token {
-        return this.lexer.peekToken()
-    }
+    // private peek(): Token {
+    //     return this.lexer.peekToken()
+    // }
 
     private consume(): Token {
         const prev = this.curToken
@@ -70,14 +85,14 @@ export class Parser {
         throw Error(`Parser error: Expected '${type}', but got '${this.curToken.type}' at line ${this.curToken.line} column ${this.curToken.column}`)
     }
 
-    private matchAny(types: TokenType[]): Token {
-        if (this.eqAny(types)) {
-            const token = this.consume()
-            return token
-        }
+    // private matchAny(types: TokenType[]): Token {
+    //     if (this.eqAny(types)) {
+    //         const token = this.consume()
+    //         return token
+    //     }
     
-        throw new Error(`Parser error: Unexpected token type. Expected one of: '${types.join(', ')}', but got '${this.curToken.type}'`)
-    }
+    //     throw new Error(`Parser error: Unexpected token type. Expected one of: '${types.join(', ')}', but got '${this.curToken.type}'`)
+    // }
 
     private eqDataType(): boolean {
         return this.curToken.type === TokenType.Type
@@ -319,25 +334,10 @@ export class Parser {
         }
     }
 
-    private precedence(type: TokenType): number {
-        switch (type) {
-          case TokenType.Asterisk:
-          case TokenType.Slash:
-            return 3;
-          case TokenType.Plus:
-          case TokenType.Minus:
-            return 2;
-          case TokenType.LeftParen:
-            return 1;
-          default:
-            return 0;
-        }
-    }
-
     private parseExpression(precedence = 0): Expression {
         let left = this.parsePrefixExpression()
 
-        while (precedence < this.precedence(this.curToken.type)) {
+        while (precedence < getPrecedence(this.curToken.type)) {
             left = this.parseInfixExpression(left)
         }
 
@@ -357,7 +357,7 @@ export class Parser {
             case TokenType.LeftParen:
                 return this.parseGroupedExpression()
         }
-        throw new Error(`Parser error: No prefix found ${this.curToken.literal}`)
+        throw new Error(`Parser error: No prefix found for ${this.curToken.literal}`)
     }
 
     private parseInfixExpression(left: Expression): Expression {
@@ -367,7 +367,7 @@ export class Parser {
             case TokenType.Asterisk:
             case TokenType.Slash: {
                 const operator = this.match(this.curToken.type).type
-                const precedence = this.precedence(operator)
+                const precedence = getPrecedence(operator)
                 const right = this.parseExpression(precedence)
                 return {
                     type: AstType.BinaryExpression,
