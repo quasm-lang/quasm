@@ -1,5 +1,6 @@
 export enum TokenType {
-    Number = 'num',
+    Integer = 'integer',
+    Float = 'float',
     Identifier = 'identifier',
     String = 'string',
     Type = 'type',

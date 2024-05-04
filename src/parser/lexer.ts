@@ -83,34 +83,37 @@ export class Lexer {
     }
 
     // Tokenizer functions
-    private readNumber(): Token {
-        let number: string = this.current()
+    private readNumber(): string {
+        let number: string = ''
 
-        while (!this.eof()) {
-            const next = this.peek(1)
-
-            if (next && isDigit(next)) {
-                number += this.advance()
-            } else {
-                break
-            }
+        while (isDigit(this.current())) {
+            number += this.current()
+            this.advance()
         }
 
-        return this.newToken(TokenType.Number, number)
+        // return this.newToken(TokenType.Integer, number)
+        return number
+    }
+
+    private readDecimal(): Token {
+        const integer = this.readNumber()
+
+        // Now check if the number is decimal
+        if (this.current() === '.') {
+            this.advance()
+            const fraction = this.readNumber()
+            return this.newToken(TokenType.Float, `${integer}.${fraction}`)
+        }
+        return this.newToken(TokenType.Integer, integer)
     }
 
     private readIdentifier(): Token {
         let literal: string = this.current()
+        this.advance()
 
-        while (!this.eof()) {
-            const next = this.peek(1)
-            
-            if (next && (isAlpha(next) || isDigit(next))) {
-                const ch = this.advance()
-                literal += ch
-            } else {
-                break
-            }
+        while (isAlpha(this.current()) || isDigit(this.current())) {
+            literal += this.current()
+            this.advance()
         }
 
         return this.newToken(lookupIdentifier(literal), literal)
@@ -125,7 +128,6 @@ export class Lexer {
             this.advance()
         }
         
-        // this.advance()
         return this.newToken(TokenType.String, literal)
     }
 
@@ -145,13 +147,9 @@ export class Lexer {
             while (this.current() === '/' && this.peek(1) === '/') {
                 this.skipComment()
             }
-            
-            if (this.eof()) {
-                break
-            }
 
             if (isDigit(this.current())) {
-                token = this.readNumber()
+                token = this.readDecimal()
                 break
             }
             else if (isAlpha(this.current())) {
@@ -160,14 +158,17 @@ export class Lexer {
             }
             else if (this.current() === "'") {
                 token = this.readString()
+                this.advance()
                 break
             }
             else if (this.current()+this.peek(1) in multiCharTokenList) {
                 token = this.readMultiChar()
+                this.advance()
                 break
             }
             else if (this.current() in tokenList) {
                 token = this.newToken(tokenList[this.current()], this.current())
+                this.advance()
                 break
             }
             
@@ -176,7 +177,7 @@ export class Lexer {
             }
         }
         
-        this.advance()
+        // console.log(token)
         return token
     }
 

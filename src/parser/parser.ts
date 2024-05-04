@@ -26,7 +26,8 @@ import {
     AstType,
     UnaryExpression,
     StringLiteral,
-    AssignmentStatement
+    AssignmentStatement,
+    FloatLiteral
 } from './ast.ts'
 
 function getPrecedence(type: TokenType): number {
@@ -62,7 +63,6 @@ export class Parser {
     private consume(): Token {
         const prev = this.curToken
         this.curToken = this.lexer.nextToken()
-        // console.log(this.curToken)
         return prev
     }
 
@@ -346,8 +346,10 @@ export class Parser {
 
     private parsePrefixExpression(): Expression {
         switch (this.curToken.type) {
-            case TokenType.Number:
+            case TokenType.Integer:
                 return this.parseIntegerLiteral()
+            case TokenType.Float:
+                return this.parseFloatLiteral()
             case TokenType.String:
                 return this.parseStringLiteral()
             case TokenType.Identifier:
@@ -422,6 +424,14 @@ export class Parser {
         return {
             type: AstType.IntegerLiteral,
             value: parseInt(this.consume().literal),
+            location: this.getLocation()
+        }
+    }
+
+    private parseFloatLiteral(): FloatLiteral {
+        return {
+            type: AstType.FloatLiteral,
+            value: parseFloat(this.consume().literal),
             location: this.getLocation()
         }
     }

@@ -16,7 +16,8 @@ import {
     Identifier,
     StringLiteral,
     AssignmentStatement,
-    UnaryExpression
+    UnaryExpression,
+    FloatLiteral
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../parser/token.ts'
 import { getWasmType } from './utils.ts'
@@ -33,10 +34,10 @@ export class CodegenVisitor {
         this.symbolTable = new SymbolTable()
         
         this.module.addFunctionImport(
-            'println',
+            'printn',
             'env',
-            'println',
-            binaryen.i32,
+            'printn',
+            binaryen.f32,
             binaryen.none
         )
         
@@ -47,8 +48,8 @@ export class CodegenVisitor {
             binaryen.createType([binaryen.i32]),
             binaryen.none
         )
-
-        this.symbolTable.addFunction('println', [binaryen.i32], binaryen.none)
+        
+        this.symbolTable.addFunction('printn', [binaryen.f32], binaryen.none)
         this.symbolTable.addFunction('printstr', [binaryen.i32], binaryen.none)
     }
     
@@ -59,7 +60,8 @@ export class CodegenVisitor {
         try {
             // First pass: Collect function declarations
             this.collectFunctionDeclarations(node as Program)
-
+            
+            // Second pass: Generate WebAssembly code
             const _program = this.visitProgram(node as Program)
             // console.log(_program)
         } catch (err) {
@@ -113,6 +115,24 @@ export class CodegenVisitor {
         }
     }
 
+    private inferDataType(expr: Expression): DataType | undefined {
+        switch (expr.type) {
+            case AstType.IntegerLiteral:
+                return DataType.i32
+            case AstType.FloatLiteral:
+                return DataType.f32
+            case AstType.StringLiteral:
+                return DataType.i32 // Assuming strings are represented as pointers (i32)
+            // case AstType.Identifier: {
+            //     const variable = this.symbolTable.getVariable(expr.value)
+            //     return variable?.type
+            // }
+            // Add more cases for other expression types as needed
+            default:
+                return undefined
+        }
+    }    
+
     private visitLetStatement(statement: LetStatement): binaryen.ExpressionRef {
         const name = statement.spec.name.value
         const dataType = statement.spec.dataType
@@ -123,14 +143,24 @@ export class CodegenVisitor {
         }
         
         let initExpr: binaryen.ExpressionRef
+        let inferredType: DataType | undefined
+
         if (value) {
             initExpr = this.visitExpression(value)
+            inferredType = this.inferDataType(value)
         } else {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
+            inferredType = DataType.i32
+        }
+
+        // finalize the data type
+        const finalType = dataType || inferredType
+        if (!finalType) {
+            throw new Error(`Unable to infer data type for variable ${name}`)
         }
         
         const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.addVariable(name, dataType || DataType.i32, index, 'declaration')
+        this.symbolTable.addVariable(name, finalType, index, 'declaration')
         
         return this.module.local.set(index, initExpr)
     }
@@ -190,8 +220,13 @@ export class CodegenVisitor {
         const value = this.visitExpression(statement.value)
 
         // Find the identifier in the current scope stack
-        const index = this.symbolTable.findIndex(name)
-        return this.module.local.set(index, value)
+        const variable = this.symbolTable.getVariable(name)
+
+        if (variable === undefined) {
+            throw new Error(`Variable ${name} doesn\'t exist`)
+        }
+        
+        return this.module.local.set(variable.index, value)
     }
 
     private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
@@ -216,6 +251,8 @@ export class CodegenVisitor {
                 return this.visitBinaryExpression(expr as BinaryExpression)
             case AstType.IntegerLiteral:
                 return this.visitNumerical(expr as IntegerLiteral)
+            case AstType.FloatLiteral:
+                return this.visitNumerical(expr as FloatLiteral)
             case AstType.StringLiteral:
                 return this.visitStringLiteral(expr as StringLiteral)
             case AstType.Identifier:
@@ -261,22 +298,43 @@ export class CodegenVisitor {
     private visitBinaryExpression(node: BinaryExpression): binaryen.ExpressionRef {
         const left = this.visitExpression(node.left)
         const right = this.visitExpression(node.right)
+
+        const leftType = binaryen.getExpressionType(left)
+        const rightType = binaryen.getExpressionType(right)
+
+        // Perform type conversion if necessary
+        let convertedLeft = left
+        let convertedRight = right
+
+        if (leftType !== rightType) {
+            if (leftType === binaryen.i32 && rightType === binaryen.f32) {
+                convertedLeft = this.module.f32.convert_s.i32(left)
+            } else if (leftType === binaryen.f32 && rightType === binaryen.i32) {
+                convertedRight = this.module.f32.convert_s.i32(right)
+            } else {
+                throw new Error(`Type ${leftType} and ${rightType} are not compatible for binary expression`)
+            }
+        }
+    
+        const resultType = leftType === binaryen.f32 || rightType === binaryen.f32 ? binaryen.f32 : binaryen.i32
     
         switch (node.operator) {
             case TokenType.Plus:
-                return this.module.i32.add(left, right)
+                return resultType === binaryen.f32 ? this.module.f32.add(convertedLeft, convertedRight) : this.module.i32.add(convertedLeft, convertedRight)
             case TokenType.Minus:
-                return this.module.i32.sub(left, right)
+                return resultType === binaryen.f32 ? this.module.f32.sub(convertedLeft, convertedRight) : this.module.i32.sub(convertedLeft, convertedRight)
             case TokenType.Asterisk:
-                return this.module.i32.mul(left, right)
+                return resultType === binaryen.f32 ? this.module.f32.mul(convertedLeft, convertedRight) : this.module.i32.mul(convertedLeft, convertedRight)
             case TokenType.Slash:
-                return this.module.i32.div_s(left, right)
+                return resultType === binaryen.f32 ? this.module.f32.div(convertedLeft, convertedRight) : this.module.i32.div_s(convertedLeft, convertedRight)
             default:
                 throw new Error(`Unhandled binary operator: ${node.operator}`)
         }
     }
     
-    private visitNumerical(node: IntegerLiteral): binaryen.ExpressionRef {
+    private visitNumerical(node: IntegerLiteral | FloatLiteral): binaryen.ExpressionRef {
+        if (node.type === AstType.FloatLiteral) 
+            return this.module.f32.const(node.value)
         return this.module.i32.const(node.value)
     }
 
@@ -299,7 +357,11 @@ export class CodegenVisitor {
     
 
     private visitIdentifier(identifier: Identifier): binaryen.ExpressionRef {
-        const index = this.symbolTable.findIndex(identifier.value)
-        return this.module.local.get(index, binaryen.i32) // Assuming i32 for simplicity
+        const variable = this.symbolTable.getVariable(identifier.value)
+        if (variable === undefined) {
+            throw new Error(`Variable ${identifier.value} not found in scope`)
+        }
+        
+        return this.module.local.get(variable.index, getWasmType(variable.type))
     }
 }
