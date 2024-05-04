@@ -19,17 +19,18 @@ import {
     UnaryExpression
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../parser/token.ts'
-import { getWasmType, ScopeData, ScopeStack } from './utils.ts'
+import { getWasmType } from './utils.ts'
+import { VariableInfo, SymbolTable } from './symbolTable.ts'
 
 export class CodegenVisitor {
     private module: binaryen.Module
-    private scopeStack: ScopeStack
+    private symbolTable: SymbolTable
     private memoryOffset = 0
     private segment: binaryen.MemorySegment[] = []
 
     constructor() {
         this.module = new binaryen.Module()
-        this.scopeStack = new ScopeStack()
+        this.symbolTable = new SymbolTable()
         
         this.module.addFunctionImport(
             'println',
@@ -47,6 +48,8 @@ export class CodegenVisitor {
             binaryen.none
         )
 
+        this.symbolTable.addFunction('println', [binaryen.i32], binaryen.none)
+        this.symbolTable.addFunction('printstr', [binaryen.i32], binaryen.none)
     }
     
     public visit(node: Node) {
@@ -54,6 +57,9 @@ export class CodegenVisitor {
             throw new Error(`Not valid program: ${node.type}`)
         }
         try {
+            // First pass: Collect function declarations
+            this.collectFunctionDeclarations(node as Program)
+
             const _program = this.visitProgram(node as Program)
             // console.log(_program)
         } catch (err) {
@@ -63,6 +69,20 @@ export class CodegenVisitor {
         }
         this.module.setMemory(1, 1, 'memory', this.segment)
         return this.module
+    }
+
+    private collectFunctionDeclarations(program: Program) {
+        for (const statement of program.statements) {
+            if (statement.type == AstType.FnStatement) {
+                const func = statement as FnStatement
+                const name = func.name.value
+                const params = func.parameters.map(param => getWasmType(param.dataType))
+                const returnType = getWasmType(func.returnType)
+
+                // Add the function information to the symbol table
+                this.symbolTable.addFunction(name, params, returnType)
+            }
+        }
     }
 
     private visitProgram(program: Program): binaryen.ExpressionRef[] {
@@ -109,8 +129,8 @@ export class CodegenVisitor {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
         }
         
-        const index = this.scopeStack.currentScopeLastIndex()
-        this.scopeStack.set(name, { type: dataType || DataType.i32, index, reason: 'declaration' })
+        const index = this.symbolTable.currentScopeLastIndex()
+        this.symbolTable.addVariable(name, dataType || DataType.i32, index, 'declaration')
         
         return this.module.local.set(index, initExpr)
     }
@@ -120,12 +140,12 @@ export class CodegenVisitor {
 
         // handle parameters
         const params = []
-        const newScope = new Map<string, ScopeData>()
-        this.scopeStack.push(newScope)
+        const newScope = new Map<string, VariableInfo>()
+        this.symbolTable.enterScope(newScope)
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            this.scopeStack.set(param.name.value, { type: param.dataType, index, reason: 'parameter' })
+            this.symbolTable.addVariable(param.name.value, param.dataType, index, 'parameter')
         }
 
         // handle return type
@@ -137,7 +157,7 @@ export class CodegenVisitor {
 
         // handles declared variables in the body
         const vars: binaryen.ExpressionRef[] = []
-        for (const [_name, value] of this.scopeStack.last()) {
+        for (const [_name, value] of this.symbolTable.last()) {
             if (value.reason === 'declaration') {
                 vars.push(getWasmType(value.type))
             }
@@ -151,7 +171,7 @@ export class CodegenVisitor {
             block
         )
         
-        this.scopeStack.pop()
+        this.symbolTable.exitScope()
 
         // dynamically export based on modifier
         if (name === 'main' || func.exported) {
@@ -170,7 +190,7 @@ export class CodegenVisitor {
         const value = this.visitExpression(statement.value)
 
         // Find the identifier in the current scope stack
-        const index = this.scopeStack.findIndex(name)
+        const index = this.symbolTable.findIndex(name)
         return this.module.local.set(index, value)
     }
 
@@ -210,9 +230,20 @@ export class CodegenVisitor {
 
     // TODO (IMPORTANT!): Need to distinguish between function call into assignment vs just calling the function, if it's just calling the function module has to drop
     private visitCallExpression(expression: CallExpression): binaryen.ExpressionRef {
+        // const args = expression.arguments.map(arg => this.visitExpression(arg))
+        // const returnType = binaryen.getFunctionInfo(this.module.getFunction(expression.callee.value)).results
+        // const callExpr = this.module.call(expression.callee.value, args, returnType)
+        // return callExpr
+        const name = expression.callee.value
+
+        // Check if the function is declared in the symbol table
+        const functionInfo = this.symbolTable.getFunction(name)
+        if (!functionInfo) {
+            throw new Error(`Undefined function: ${name}`)
+        }
+
         const args = expression.arguments.map(arg => this.visitExpression(arg))
-        const returnType = binaryen.getFunctionInfo(this.module.getFunction(expression.callee.value)).results
-        const callExpr = this.module.call(expression.callee.value, args, returnType)
+        const callExpr = this.module.call(name, args, functionInfo.returnType)
         return callExpr
     }
     
@@ -268,7 +299,7 @@ export class CodegenVisitor {
     
 
     private visitIdentifier(identifier: Identifier): binaryen.ExpressionRef {
-        const index = this.scopeStack.findIndex(identifier.value)
+        const index = this.symbolTable.findIndex(identifier.value)
         return this.module.local.get(index, binaryen.i32) // Assuming i32 for simplicity
     }
 }
