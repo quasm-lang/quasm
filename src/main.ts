@@ -55,7 +55,7 @@ function compileAndRun(src: string) {
     const wasmModule = new WebAssembly.Module(module.emitBinary())
     const wasmInstance = new WebAssembly.Instance(wasmModule, {
         env: {
-            println: (value: number) => {
+            print: (value: number) => {
                 console.log(value)
             },
             printstr: (stringPointer: number) => {
