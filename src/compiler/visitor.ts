@@ -34,10 +34,10 @@ export class CodegenVisitor {
         this.symbolTable = new SymbolTable()
         
         this.module.addFunctionImport(
-            'printn',
+            'print',
             'env',
-            'printn',
-            binaryen.f32,
+            'print',
+            binaryen.i32,
             binaryen.none
         )
         
@@ -49,7 +49,7 @@ export class CodegenVisitor {
             binaryen.none
         )
         
-        this.symbolTable.addFunction('printn', [binaryen.f32], binaryen.none)
+        this.symbolTable.addFunction('print', [binaryen.i32], binaryen.none)
         this.symbolTable.addFunction('printstr', [binaryen.i32], binaryen.none)
     }
     
@@ -69,7 +69,10 @@ export class CodegenVisitor {
             console.log(error)
             Deno.exit(1)
         }
-        this.module.setMemory(1, 1, 'memory', this.segment)
+
+        if (this.segment.length > 0)
+            this.module.setMemory(1, 1, 'memory', this.segment)
+
         return this.module
     }
 
@@ -233,7 +236,6 @@ export class CodegenVisitor {
         const expression = this.visitExpression(statement.expression)
         // Implicitly drop the result of the expression from the stack if it's not being used
         this.module.autoDrop()
-
         return expression
     }
     
@@ -269,9 +271,9 @@ export class CodegenVisitor {
         }
 
         const args = expression.arguments.map(arg => this.visitExpression(arg))
-        const callExpr = this.module.call(name, args, functionInfo.returnType)
-        return callExpr
+        return this.module.call(name, args, functionInfo.returnType)
     }
+    
     
     private visitUnaryExpression(expr: UnaryExpression): binaryen.ExpressionRef {
         const right = this.visitExpression(expr.right)
