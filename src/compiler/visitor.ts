@@ -118,8 +118,8 @@ export class CodegenVisitor {
         }
     }
 
-    private inferDataType(expr: Expression): DataType | undefined {
-        switch (expr.type) {
+    private inferDataType(expression: Expression): DataType {
+        switch (expression.type) {
             case AstType.IntegerLiteral:
                 return DataType.i32
             case AstType.FloatLiteral:
@@ -127,12 +127,12 @@ export class CodegenVisitor {
             case AstType.StringLiteral:
                 return DataType.i32 // Assuming strings are represented as pointers (i32)
             // case AstType.Identifier: {
-            //     const variable = this.symbolTable.getVariable(expr.value)
+            //     const variable = this.symbolTable.getVariable(expression.value)
             //     return variable?.type
             // }
             // Add more cases for other expression types as needed
             default:
-                return undefined
+                throw new Error(`Cannot infer data type from expression of type ${expression.type}`)
         }
     }    
 
@@ -158,9 +158,6 @@ export class CodegenVisitor {
 
         // finalize the data type
         const finalType = dataType || inferredType
-        if (!finalType) {
-            throw new Error(`Unable to infer data type for variable ${name}`)
-        }
         
         const index = this.symbolTable.currentScopeLastIndex()
         this.symbolTable.addVariable(name, finalType, index, 'declaration')
@@ -239,25 +236,25 @@ export class CodegenVisitor {
         return expression
     }
     
-    private visitExpression(expr: Expression): binaryen.ExpressionRef {
-        switch (expr.type) {
+    private visitExpression(expression: Expression): binaryen.ExpressionRef {
+        switch (expression.type) {
             case AstType.UnaryExpression:
-                return this.visitUnaryExpression(expr as UnaryExpression)
+                return this.visitUnaryExpression(expression as UnaryExpression)
             case AstType.BinaryExpression:
-                return this.visitBinaryExpression(expr as BinaryExpression)
+                return this.visitBinaryExpression(expression as BinaryExpression)
             case AstType.IntegerLiteral:
-                return this.visitNumerical(expr as IntegerLiteral)
+                return this.visitNumerical(expression as IntegerLiteral)
             case AstType.FloatLiteral:
-                return this.visitNumerical(expr as FloatLiteral)
+                return this.visitNumerical(expression as FloatLiteral)
             case AstType.StringLiteral:
-                return this.visitStringLiteral(expr as StringLiteral)
+                return this.visitStringLiteral(expression as StringLiteral)
             case AstType.Identifier:
-                    return this.visitIdentifier(expr as Identifier)
+                    return this.visitIdentifier(expression as Identifier)
             case AstType.CallExpression:
-                return this.visitCallExpression(expr as CallExpression)
+                return this.visitCallExpression(expression as CallExpression)
             // Add cases for other expression types as needed
             default:
-                throw new Error(`Unhandled expression type: ${expr.type}`)
+                throw new Error(`Unhandled expression type: ${expression.type}`)
         }
     }
 
@@ -275,14 +272,14 @@ export class CodegenVisitor {
     }
     
     
-    private visitUnaryExpression(expr: UnaryExpression): binaryen.ExpressionRef {
-        const right = this.visitExpression(expr.right)
+    private visitUnaryExpression(expression: UnaryExpression): binaryen.ExpressionRef {
+        const right = this.visitExpression(expression.right)
         
-        switch (expr.operator) {
+        switch (expression.operator) {
             case TokenType.Minus:
                 return this.module.i32.sub(this.module.i32.const(0), right)
             default:
-                throw new Error(`Unhandled unary operator ${expr.operator}`)
+                throw new Error(`Unhandled unary operator ${expression.operator}`)
         }
     }
     
