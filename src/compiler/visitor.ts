@@ -231,14 +231,8 @@ export class CodegenVisitor {
 
     private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
         const expression = this.visitExpression(statement.expression)
-
-        switch (statement.expression.type) {
-            case AstType.Identifier:
-            case AstType.IntegerLiteral:
-            case AstType.BinaryExpression: {
-                return this.module.drop(expression)
-            }
-        }
+        // Implicitly drop the result of the expression from the stack if it's not being used
+        this.module.autoDrop()
 
         return expression
     }
@@ -265,12 +259,7 @@ export class CodegenVisitor {
         }
     }
 
-    // TODO (IMPORTANT!): Need to distinguish between function call into assignment vs just calling the function, if it's just calling the function module has to drop
     private visitCallExpression(expression: CallExpression): binaryen.ExpressionRef {
-        // const args = expression.arguments.map(arg => this.visitExpression(arg))
-        // const returnType = binaryen.getFunctionInfo(this.module.getFunction(expression.callee.value)).results
-        // const callExpr = this.module.call(expression.callee.value, args, returnType)
-        // return callExpr
         const name = expression.callee.value
 
         // Check if the function is declared in the symbol table
