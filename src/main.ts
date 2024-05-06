@@ -1,6 +1,6 @@
 import { Lexer } from './parser/lexer.ts'
 import { Parser } from './parser/parser.ts'
-import { CodegenVisitor } from './compiler/visitor.ts'
+import { CodeGenerator } from './compiler/visitor.ts'
 
 import { Command } from './deps.ts'
 import { ensureDirSync } from 'https://deno.land/std@0.223.0/fs/mod.ts'
@@ -31,17 +31,17 @@ program.command('run')
 program.parse()
 
 function compileAndRun(src: string) {
+    // Parsing
     const lexer = new Lexer(src)
     const parser = new Parser(lexer)
     const ast = parser.parseProgram()
 
+    // Debug
     ensureDirSync('./debug')
-
-    // Debug AST
     Deno.writeTextFileSync('./debug/ast.json', JSON.stringify(ast, null, 2))
 
-    const visitor = new CodegenVisitor()
-    const module = visitor.visit(ast)
+    const codeGen = new CodeGenerator()
+    const module = codeGen.visit(ast)
     Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(module.emitText()))
     
     if (!module.validate()) {
