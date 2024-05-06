@@ -50,7 +50,8 @@ function compileAndRun(src: string) {
     }
     
     module.optimize()
-    Deno.writeFileSync('./debug/output.js', new TextEncoder().encode(module.emitAsmjs()))
+    Deno.writeFileSync('./debug/output.optimized.wat', new TextEncoder().encode(module.emitText()))
+    Deno.writeFileSync('./debug/output.optimized.ams.js', new TextEncoder().encode(module.emitAsmjs()))
 
     const wasmModule = new WebAssembly.Module(module.emitBinary())
     const wasmInstance = new WebAssembly.Instance(wasmModule, {
