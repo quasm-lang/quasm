@@ -8,8 +8,8 @@ export interface VariableInfo {
 }
 
 export interface FunctionInfo {
-    params: binaryen.Type[]
-    returnType: binaryen.Type
+    params: DataType[]
+    returnType: DataType
 }
 
 export class SymbolTable {
@@ -49,7 +49,7 @@ export class SymbolTable {
         return this.scopes[this.scopes.length - 1].size
     }
 
-    addFunction(name: string, params: binaryen.Type[], returnType: binaryen.Type) {
+    addFunction(name: string, params: DataType[], returnType: DataType) {
         this.functions.set(name, { params, returnType })
     }
 

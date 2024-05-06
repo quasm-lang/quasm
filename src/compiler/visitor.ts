@@ -22,8 +22,9 @@ import {
 import { TokenType, DataType } from '../parser/token.ts'
 import { getWasmType } from './utils.ts'
 import { VariableInfo, SymbolTable } from './symbolTable.ts'
+import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 
-export class CodegenVisitor {
+export class CodeGenerator {
     private module: binaryen.Module
     private symbolTable: SymbolTable
     private memoryOffset = 0
@@ -49,14 +50,17 @@ export class CodegenVisitor {
             binaryen.none
         )
         
-        this.symbolTable.addFunction('print', [binaryen.i32], binaryen.none)
-        this.symbolTable.addFunction('printstr', [binaryen.i32], binaryen.none)
+        this.symbolTable.addFunction('print', [DataType.i32], DataType.none)
+        this.symbolTable.addFunction('printstr', [DataType.i32], DataType.none)
     }
     
     public visit(node: Node) {
-        if (node.type !== AstType.Program) {
+        if (node.type !== AstType.Program) 
             throw new Error(`Not valid program: ${node.type}`)
-        }
+
+        const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
+        semanticAnalyzer.check(node as Program)
+
         try {
             // First pass: Collect function declarations
             this.collectFunctionDeclarations(node as Program)
@@ -81,8 +85,8 @@ export class CodegenVisitor {
             if (statement.type == AstType.FnStatement) {
                 const func = statement as FnStatement
                 const name = func.name.value
-                const params = func.parameters.map(param => getWasmType(param.dataType))
-                const returnType = getWasmType(func.returnType)
+                const params = func.parameters.map(param => param.dataType)
+                const returnType = func.returnType
 
                 // Add the function information to the symbol table
                 this.symbolTable.addFunction(name, params, returnType)
@@ -268,7 +272,7 @@ export class CodegenVisitor {
         }
 
         const args = expression.arguments.map(arg => this.visitExpression(arg))
-        return this.module.call(name, args, functionInfo.returnType)
+        return this.module.call(name, args, getWasmType(functionInfo.returnType))
     }
     
     
