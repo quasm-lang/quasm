@@ -27,7 +27,8 @@ import {
     UnaryExpression,
     StringLiteral,
     AssignmentStatement,
-    FloatLiteral
+    FloatLiteral,
+    StructStatement
 } from './ast.ts'
 
 function getPrecedence(type: TokenType): number {
@@ -148,6 +149,8 @@ export class Parser {
             return this.parseReturnStatement()
         } else if (this.eq(TokenType.Let)) {
             return this.parseLetStatement()
+        } else if (this.eq(TokenType.Struct)) {
+            return this.parseStructStatement()
         } else if (this.peekEq(TokenType.Assignment)) {
             return this.parseAssignmentStatement()
         } else {
@@ -323,9 +326,54 @@ export class Parser {
         }
     }
 
+    private parseStructStatement(): StructStatement {
+        this.match(TokenType.Struct)
+        const name = this.parseIdentifier()
+        this.match(TokenType.LeftBrace)
+
+        const fields: Field[] = []
+
+        while (!this.eq(TokenType.RightBrace)) {
+            const fieldName: Identifier = {
+                type: AstType.Identifier,
+                value: this.match(TokenType.Identifier).literal,
+                location: this.getLocation(),
+            }
+    
+            const dataTypeToken: DataTypeToken = this.matchDataType()
+            const dataType = dataTypeToken.literal
+    
+            const field: Field = {
+                type: AstType.Field,
+                name: fieldName,
+                dataType,
+                location: this.getLocation(),
+            }
+    
+            fields.push(field)
+    
+            if (!this.eq(TokenType.RightBrace)) {
+                this.match(TokenType.Comma)
+            }
+        }
+
+        this.match(TokenType.RightBrace)
+
+        return {
+            type: AstType.StructStatement,
+            name,
+            fields,
+            location: this.getLocation()
+        }
+    }
+
     private parseExpressionStatement(): ExpressionStatement {
         const expression = this.parseExpression()
         this.match(TokenType.Semicolon)
+
+        while (this.eq(TokenType.Semicolon)) {
+            this.consume()
+        }
 
         return {
             type: AstType.ExpressionStatement,
