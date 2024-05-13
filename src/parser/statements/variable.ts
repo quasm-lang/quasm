@@ -12,10 +12,13 @@ export function parseLetStatement(parser: Parser): LetStatement {
     let dataType: DataType | undefined
     let value: Expression | undefined
 
-    if (parser.eqDataType()) {
+    if (parser.eq(TokenType.Colon)) { // Type exists
+        parser.match(TokenType.Colon)
+
         const dataTypeToken = parser.matchDataType()
         dataType = dataTypeToken.literal
     }
+    
 
     if (parser.eq(TokenType.Assignment)) {
         parser.match(TokenType.Assignment)
