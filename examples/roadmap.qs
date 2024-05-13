@@ -1,47 +1,43 @@
-// Language roadmap
-// April 18, 2024
-// Original language design proposal
-
 fn main() {
     // Data Types
-    let big_num i64
-    let integer i32
-    let floating_num f32
-    let big_float f64
-    let just_str string
+    let big_num: i64
+    let integer: i32
+    let floating_num: f32
+    let big_float: f64
+    let just_str: string
     let some_str = 'Hello World!'
-    println(some_str)
+    print(some_str)
 
     // Function call and error handling
     add(32, 9)
     let (result, error) = divide(10, 0)
     if error != none {
-        println(error)
+        print(error)
     }
 
     // Control flow
     let numer = 1
 
     if number == 0 {
-        println('zero')
+        print('zero')
     } else if number == 1 {
-        println('it's 1')
+        print('it's 1')
     } else {
-        println('something else')
+        print('something else')
     }
 
     switch number {
         case 1:
-            println(1)
+            print(1)
         case 2:
-            println(2)
+            print(2)
         default:
             print(0)
     }
 
     // Loops
     for i = 10 to 0 step -1 {
-        println(i)
+        print(i)
     }
 
     while number == 3 {
@@ -50,7 +46,7 @@ fn main() {
 
     let numbers array<int> = [1, 2, 3, 4]
     for num in number {
-        println(num)
+        print(num)
     }
 
     // Structs
