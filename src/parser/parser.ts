@@ -71,9 +71,9 @@ export class Parser {
         return this.curToken.type == type
     }
 
-    private eqAny(types: TokenType[]): Token | null {
-        return types.includes(this.curToken.type) ? this.curToken : null
-    }
+    // private eqAny(types: TokenType[]): Token | null {
+    //     return types.includes(this.curToken.type) ? this.curToken : null
+    // }
 
     private peekEq(token: TokenType): boolean {
         return this.lexer.peekToken().type === token
@@ -178,6 +178,7 @@ export class Parser {
         }
     }
 
+    // Misc
     private parseExport(): FnStatement {
         this.match(TokenType.Export)
         
@@ -190,17 +191,38 @@ export class Parser {
         throw new Error('Parser error: Unexpected token after export.')
     }
 
-    private parseFnStatement(): FnStatement {
-        this.match(TokenType.Fn)
+    private parseFields(): Field[] {
+        const parameters: Field[] = []
 
-        const name: Identifier = {
-            type: AstType.Identifier,
-            value: this.match(TokenType.Identifier).literal,
-            location: this.getLocation()
+        while (!this.eq(TokenType.RightParen)) {
+            const name = this.parseIdentifier()
+
+            const dataTypeToken = this.matchDataType()
+            const dataType = dataTypeToken.literal
+
+            const param: Field = {
+                type: AstType.Field,
+                name: name,
+                dataType,
+                location: this.getLocation()
+            }
+
+            parameters.push(param)
+    
+            if (!this.eq(TokenType.RightParen)) {
+                this.match(TokenType.Comma)
+            }
         }
 
+        return parameters
+    }
+
+    // Statements
+    private parseFnStatement(): FnStatement {
+        this.match(TokenType.Fn)
+        const name = this.parseIdentifier()
         this.match(TokenType.LeftParen)
-        const parameters = this.parseFnDeclarationParameters()
+        const parameters = this.parseFields()
         this.match(TokenType.RightParen)
 
         let returnType: DataType = DataType.none // Default return type
@@ -224,40 +246,9 @@ export class Parser {
         }
     }
 
-    private parseFnDeclarationParameters(): Field[] {
-        const parameters: Field[] = []
-
-        while (!this.eq(TokenType.RightParen)) {
-            const name: Identifier = {
-                type: AstType.Identifier,
-                value: this.match(TokenType.Identifier).literal,
-                location: this.getLocation()
-            }
-
-            const dataTypeToken: DataTypeToken = this.matchDataType()
-            const dataType = dataTypeToken.literal
-
-            const param: Field = {
-                type: AstType.Field,
-                name: name,
-                dataType,
-                location: this.getLocation()
-            }
-
-            parameters.push(param)
-    
-            if (!this.eq(TokenType.RightParen)) {
-                this.match(TokenType.Comma)
-            }
-        }
-    
-        return parameters
-    }
-
     private parseReturnStatement(): ReturnStatement {
         this.match(TokenType.Return)
         const value = this.parseExpression()
-
         this.match(TokenType.Semicolon)
 
         return {
@@ -269,13 +260,8 @@ export class Parser {
 
     private parseLetStatement(): LetStatement {
         this.match(TokenType.Let)
-
-        const name: Identifier = {
-            type: AstType.Identifier,
-            value: this.match(TokenType.Identifier).literal,
-            location: this.getLocation()
-        }
-
+        
+        const name = this.parseIdentifier()
         let dataType: DataType | undefined
         let value: Expression | undefined
 
@@ -289,19 +275,17 @@ export class Parser {
             value = this.parseExpression()
         }
 
-        const spec: Spec = {
-            type: AstType.Spec,
-            name,
-            dataType,
-            value,
-            location: this.getLocation()
-        }
-
         this.match(TokenType.Semicolon)
 
         return {
             type: AstType.LetStatement,
-            spec,
+            spec: {
+                type: AstType.Spec,
+                name,
+                dataType,
+                value,
+                location: this.getLocation()
+            } as Spec,
             location: this.getLocation()
         }
     }
@@ -315,7 +299,6 @@ export class Parser {
 
         this.match(TokenType.Assignment)
         const value = this.parseExpression()
-
         this.match(TokenType.Semicolon)
 
         return {
@@ -331,31 +314,7 @@ export class Parser {
         const name = this.parseIdentifier()
         this.match(TokenType.LeftBrace)
 
-        const fields: Field[] = []
-
-        while (!this.eq(TokenType.RightBrace)) {
-            const fieldName: Identifier = {
-                type: AstType.Identifier,
-                value: this.match(TokenType.Identifier).literal,
-                location: this.getLocation(),
-            }
-    
-            const dataTypeToken: DataTypeToken = this.matchDataType()
-            const dataType = dataTypeToken.literal
-    
-            const field: Field = {
-                type: AstType.Field,
-                name: fieldName,
-                dataType,
-                location: this.getLocation(),
-            }
-    
-            fields.push(field)
-    
-            if (!this.eq(TokenType.RightBrace)) {
-                this.match(TokenType.Comma)
-            }
-        }
+        const fields = this.parseFields()
 
         this.match(TokenType.RightBrace)
 
@@ -382,6 +341,7 @@ export class Parser {
         }
     }
 
+    // Expressions
     private parseExpression(precedence = 0): Expression {
         let left = this.parsePrefixExpression()
 
@@ -495,7 +455,7 @@ export class Parser {
     private parseIdentifier(): Identifier {
         return {
             type: AstType.Identifier,
-            value: this.consume().literal,
+            value: this.match(TokenType.Identifier).literal,
             location: this.getLocation()
         }
     }
