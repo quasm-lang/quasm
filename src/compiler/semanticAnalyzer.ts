@@ -157,7 +157,7 @@ export class SemanticAnalyzer {
         const variable = this.symbolTable.getVariable(identifier.value)
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
-        }
+        };
         return variable.type
     }
 
@@ -194,7 +194,7 @@ export class SemanticAnalyzer {
         return rightType
     }
     
-private visitCallExpression(expression: CallExpression): DataType {
+    private visitCallExpression(expression: CallExpression): DataType {
         const functionInfo = this.symbolTable.getFunction(expression.callee.value)
 
         if (!functionInfo) {

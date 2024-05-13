@@ -1,4 +1,3 @@
-import { binaryen } from '../deps.ts'
 import { DataType } from '../parser/token.ts'
 
 export interface VariableInfo {
