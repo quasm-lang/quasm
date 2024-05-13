@@ -1,6 +1,6 @@
 import { Lexer } from './parser/lexer.ts'
 import { Parser } from './parser/parser.ts'
-import { CodeGenerator } from './compiler/visitor.ts'
+import { CodeGenerator } from './compiler/generator.ts'
 
 import { Command } from './deps.ts'
 import { ensureDirSync } from 'https://deno.land/std@0.223.0/fs/mod.ts'
@@ -9,7 +9,7 @@ const program = new Command()
 program
     .name('Quasm')
     .description('Compiles to WASM')
-    .version('0.0.1')
+    .version('0.0.2')
 
 program.command('run')
     .description('Compile internally and run')
