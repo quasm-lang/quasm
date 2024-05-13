@@ -143,6 +143,10 @@ export class Lexer {
 
         while (!this.eof()) {
             this.skipWhitespace()
+
+            if (this.eof()) {
+                break
+            }
             
             while (this.current() === '/' && this.peek(1) === '/') {
                 this.skipComment()
