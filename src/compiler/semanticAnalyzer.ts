@@ -17,7 +17,7 @@ import {
     ExpressionStatement,
 } from '../parser/ast.ts'
 import { SymbolTable } from './symbolTable.ts'
-import { DataType, TokenType } from '../parser/token.ts'
+import { DataType, TokenType } from '../lexer/token.ts'
 
 export class SemanticAnalyzer {
     private symbolTable: SymbolTable

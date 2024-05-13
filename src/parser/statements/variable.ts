@@ -1,9 +1,8 @@
 import { Parser } from '../parser.ts'
-import { TokenType, DataType } from '../token.ts'
+import { TokenType, DataType } from '../../lexer/token.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseExpression } from '../expressions/expression.ts'
 import { LetStatement, Expression, AstType, Spec, AssignmentStatement, Identifier } from '../ast.ts'
-
 
 export function parseLetStatement(parser: Parser): LetStatement {
     parser.match(TokenType.Let)

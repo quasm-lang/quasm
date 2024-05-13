@@ -1,5 +1,5 @@
 import { Parser } from '../parser.ts'
-import { TokenType } from '../token.ts'
+import { TokenType } from '../../lexer/token.ts'
 import {
     IntegerLiteral,
     AstType,

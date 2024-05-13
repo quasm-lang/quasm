@@ -2,9 +2,9 @@ import {
     Token,
     TokenType,
     DataTypeToken
-} from './token.ts'
+} from '../lexer/token.ts'
 
-import { Lexer } from './lexer.ts'
+import { Lexer } from '../lexer/mod.ts'
 
 import {
     Program,

@@ -19,7 +19,7 @@ import {
     UnaryExpression,
     FloatLiteral
 } from '../parser/ast.ts'
-import { TokenType, DataType } from '../parser/token.ts'
+import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
 import { VariableInfo, SymbolTable } from './symbolTable.ts'
 import { SemanticAnalyzer } from './semanticAnalyzer.ts'

@@ -1,6 +1,6 @@
 import { AstType, BinaryExpression, CallExpression, Expression, Identifier, UnaryExpression } from '../ast.ts'
 import { Parser } from '../parser.ts'
-import { TokenType } from '../token.ts'
+import { TokenType } from '../../lexer/token.ts'
 import { parseFloatLiteral, parseIdentifier, parseIntegerLiteral, parseStringLiteral } from './core.ts'
 
 function getPrecedence(type: TokenType): number {

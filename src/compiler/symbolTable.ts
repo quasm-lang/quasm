@@ -1,4 +1,4 @@
-import { DataType } from '../parser/token.ts'
+import { DataType } from '../lexer/token.ts'
 
 export interface VariableInfo {
     type: DataType

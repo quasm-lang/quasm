@@ -1,4 +1,4 @@
-import { Lexer } from './parser/lexer.ts'
+import { Lexer } from './lexer/mod.ts'
 import { Parser } from './parser/parser.ts'
 import { CodeGenerator } from './compiler/generator.ts'
 
