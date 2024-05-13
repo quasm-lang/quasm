@@ -58,14 +58,15 @@ export class CodeGenerator {
         if (node.type !== AstType.Program) 
             throw new Error(`Not valid program: ${node.type}`)
 
-        const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
-        semanticAnalyzer.check(node as Program)
-
         try {
             // First pass: Collect function declarations
             this.collectFunctionDeclarations(node as Program)
+
+            // Second pass: Semantic Analyzer
+            const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
+            semanticAnalyzer.check(node as Program)
             
-            // Second pass: Generate WebAssembly code
+            // Third pass: Generate WebAssembly code
             const _program = this.visitProgram(node as Program)
             // console.log(_program)
         } catch (err) {
