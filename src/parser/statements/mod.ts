@@ -3,6 +3,7 @@ import { parseExpression } from '../expressions/mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { AstType, BlockStatement, ExpressionStatement, Statement } from '../ast.ts'
 
+export { parseIfStatement, parseWhileStatement } from './controlFlow.ts'
 export { parseFnStatement, parseReturnStatement } from './function.ts'
 export { parseLetStatement, parseAssignmentStatement } from './variable.ts'
 export { parseStructStatement } from './struct.ts'
@@ -23,6 +24,8 @@ export function parseExpressionStatement(parser: Parser): ExpressionStatement {
 }
 
 export function parseBlockStatement(parser: Parser): BlockStatement {
+    parser.match(TokenType.LeftBrace)
+
     const statements: Statement[] = []
     
     while (

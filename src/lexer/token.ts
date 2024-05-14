@@ -22,8 +22,8 @@ export enum TokenType {
     NonEquality = '!=',
     LessThan = '<',
     GreaterThan = '>',
-    LessThanEquals = '<=',
-    GreaterThanEquals = '>=',
+    LessThanOrEqual = '<=',
+    GreaterThanOrEqual = '>=',
 
     LeftParen = '(',
     RightParen = ')',
@@ -82,8 +82,8 @@ export const multiCharTokenList: Record<string, TokenType> = {
     '->': TokenType.RightArrow,
     '==': TokenType.Equality,
     '!=': TokenType.NonEquality,
-    '<=': TokenType.LessThanEquals,
-    '>=': TokenType.GreaterThanEquals,
+    '<=': TokenType.LessThanOrEqual,
+    '>=': TokenType.GreaterThanOrEqual,
 }
 
 // Keywords
@@ -121,4 +121,13 @@ export type DataTypeToken = Token & {
     literal: DataType
 }
 
-export type InfixOperator = TokenType.Plus | TokenType.Minus | TokenType.Asterisk | TokenType.Slash
+export type InfixOperator =
+    TokenType.Plus |
+    TokenType.Minus |
+    TokenType.Asterisk |
+    TokenType.Slash |
+    TokenType.GreaterThan |
+    TokenType.LessThan |
+    TokenType.Equality |
+    TokenType.GreaterThanOrEqual |
+    TokenType.LessThanOrEqual

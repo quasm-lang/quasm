@@ -19,7 +19,6 @@ export function parseFnStatement(parser: Parser): FnStatement {
         returnType = returnToken.literal
     }
 
-    parser.match(TokenType.LeftBrace)
     const block = parseBlockStatement(parser)
 
     return {

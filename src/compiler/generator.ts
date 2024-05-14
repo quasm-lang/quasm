@@ -17,7 +17,9 @@ import {
     StringLiteral,
     AssignmentStatement,
     UnaryExpression,
-    FloatLiteral
+    FloatLiteral,
+    WhileStatement,
+    IfStatement
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
@@ -75,9 +77,11 @@ export class CodeGenerator {
             Deno.exit(1)
         }
 
-        if (this.segment.length > 0)
+        if (this.segment.length > 0) {
             this.module.setMemory(1, 1, 'memory', this.segment)
+        }
 
+        
         return this.module
     }
 
@@ -118,6 +122,10 @@ export class CodeGenerator {
                 return this.visitReturnStatement(statement as ReturnStatement)
             case AstType.AssignmentStatement:
                 return this.visitAssignmentStatement(statement as AssignmentStatement)
+            case AstType.IfStatement:
+                return this.visitIfStatement(statement as IfStatement)
+            case AstType.WhileStatement:
+                return this.visitWhileStatement(statement as WhileStatement)
             default:
                 throw new Error(`Unhandled statement type: ${statement.type}`)
         }
@@ -234,6 +242,39 @@ export class CodeGenerator {
         return this.module.local.set(variable.index, value)
     }
 
+    private visitIfStatement(statement: IfStatement): binaryen.ExpressionRef {
+        const condition = this.visitExpression(statement.condition)
+        const body = statement.body.statements.map(statement => this.visitStatement(statement))
+
+        // TODO: possibly nest the if blocks to achieve if-else blocks
+        // TODO: else block
+        // let elseBlock = null;
+        // if (statement.elseBody) {
+        //     elseBlock = this.module.block(null, statement.elseBody.statements.map(stmt => this.visitStatement(stmt)), binaryen.none);
+        // }
+
+        return this.module.if(
+            condition,
+            this.module.block(null, body)
+        )
+    }
+
+    private visitWhileStatement(statement: WhileStatement): binaryen.ExpressionRef {
+        const condition = this.visitExpression(statement.condition)
+        const body = statement.body.statements.map(statement => this.visitStatement(statement))
+        
+        const loopBlock = this.module.loop("loop", this.module.block(null, [
+            // Check the condition: if it's false, break out of the loop to the 'while' block
+            this.module.br_if('while', this.module.i32.eqz(condition)),
+            // Loop body
+            this.module.block(null, body),
+            // Continue at the top of the loop body
+            this.module.br("loop")
+        ]))
+
+        return this.module.block("while", [loopBlock], binaryen.none)
+    }
+
     private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
         const expression = this.visitExpression(statement.expression)
         // Implicitly drop the result of the expression from the stack if it's not being used
@@ -320,6 +361,16 @@ export class CodeGenerator {
                 return resultType === binaryen.f32 ? this.module.f32.mul(convertedLeft, convertedRight) : this.module.i32.mul(convertedLeft, convertedRight)
             case TokenType.Slash:
                 return resultType === binaryen.f32 ? this.module.f32.div(convertedLeft, convertedRight) : this.module.i32.div_s(convertedLeft, convertedRight)
+            case TokenType.GreaterThan:
+                return this.module.i32.gt_s(left, right)
+            case TokenType.LessThan:
+                return this.module.i32.lt_s(left, right)
+            case TokenType.Equality:
+                return this.module.i32.eq(left, right)
+            case TokenType.GreaterThanOrEqual:
+                return this.module.i32.ge_s(left, right)
+            case TokenType.LessThanOrEqual:
+                return this.module.i32.le_s(left, right)
             default:
                 throw new Error(`Unhandled binary operator: ${node.operator}`)
         }

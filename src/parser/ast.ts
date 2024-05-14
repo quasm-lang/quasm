@@ -13,6 +13,8 @@ export enum AstType {
     ReturnStatement = 'RETURN_STATEMENT',
     AssignmentStatement = 'ASSIGNMENT_STATEMENT',
     StructStatement = 'STRUCT_STATEMENT',
+    IfStatement = 'IF_STATEMENT',
+    WhileStatement = 'WHILE_STATEMENT',
     PrefixExpression = 'PREFIX_EXPRESSION',
     InfixExpression = 'INFIX_EXPRESSION',
     CallExpression = 'CALL_EXPRESSION',
@@ -90,6 +92,18 @@ export interface StructStatement extends Statement {
     type: AstType.StructStatement
     name: Identifier
     fields: Field[]
+}
+
+export interface IfStatement extends Statement {
+    type: AstType.IfStatement
+    condition: Expression
+    body: BlockStatement
+}
+
+export interface WhileStatement extends Statement {
+    type: AstType.WhileStatement
+    condition: Expression
+    body: BlockStatement
 }
 
 // Expressions

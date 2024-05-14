@@ -22,7 +22,9 @@ import {
     parseLetStatement,
     parseAssignmentStatement,
     parseExpressionStatement,
-    parseStructStatement
+    parseStructStatement,
+    parseWhileStatement,
+    parseIfStatement
 } from './statements/mod.ts'
 
 export class Parser {
@@ -129,6 +131,10 @@ export class Parser {
             return parseLetStatement(this)
         } else if (this.eq(TokenType.Struct)) {
             return parseStructStatement(this)
+        } else if (this.eq(TokenType.If)) {
+            return parseIfStatement(this)
+        }else if (this.eq(TokenType.While)) {
+            return parseWhileStatement(this)
         } else if (this.peekEq(TokenType.Assignment)) {
             return parseAssignmentStatement(this)
         } else {
