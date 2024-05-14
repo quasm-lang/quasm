@@ -1,5 +1,5 @@
 import { Parser } from '../parser.ts'
-import { parseExpression } from '../expressions/expression.ts'
+import { parseExpression } from '../expressions/mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { AstType, BlockStatement, ExpressionStatement, Statement } from '../ast.ts'
 

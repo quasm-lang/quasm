@@ -1,7 +1,7 @@
 import { Parser } from '../parser.ts'
 import { TokenType, DataType } from '../../lexer/token.ts'
 import { parseIdentifier } from '../expressions/core.ts'
-import { parseExpression } from '../expressions/expression.ts'
+import { parseExpression } from '../expressions/mod.ts'
 import { LetStatement, Expression, AstType, Spec, AssignmentStatement, Identifier } from '../ast.ts'
 
 export function parseLetStatement(parser: Parser): LetStatement {

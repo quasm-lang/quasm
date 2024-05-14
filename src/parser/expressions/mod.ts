@@ -5,16 +5,22 @@ import { parseFloatLiteral, parseIdentifier, parseIntegerLiteral, parseStringLit
 
 function getPrecedence(type: TokenType): number {
     switch (type) {
-      case TokenType.Asterisk:
-      case TokenType.Slash:
-        return 3
-      case TokenType.Plus:
-      case TokenType.Minus:
-        return 2
-      case TokenType.LeftParen:
-        return 1
-      default:
-        return 0
+        case TokenType.Asterisk:
+        case TokenType.Slash:
+            return 4
+        case TokenType.Plus:
+        case TokenType.Minus:
+            return 3
+        case TokenType.Equality:
+        case TokenType.LessThan:
+        case TokenType.GreaterThan:
+        case TokenType.GreaterThanOrEqual:
+        case TokenType.LessThanOrEqual:
+            return 2
+        case TokenType.LeftParen:
+            return 1
+        default:
+            return 0
     }
 }
 
@@ -51,7 +57,12 @@ export function parseInfixExpression(parser: Parser, left: Expression): Expressi
         case TokenType.Plus:
         case TokenType.Minus:
         case TokenType.Asterisk:
-        case TokenType.Slash: {
+        case TokenType.Slash:
+        case TokenType.GreaterThan:
+        case TokenType.LessThan:
+        case TokenType.Equality:
+        case TokenType.LessThanOrEqual:
+        case TokenType.GreaterThanOrEqual: {
             const operator = parser.match(parser.curToken.type).type
             const precedence = getPrecedence(operator)
             const right = parseExpression(parser, precedence)
