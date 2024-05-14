@@ -1,5 +1,5 @@
 # Quasm
-Quasm is a custom programming language designed to compile directly to WebAssembly (WASM). It aims to provide a simple and expressive syntax while leveraging the performance benefits of WebAssembly.
+Quasm is a programming language designed to compile directly to WebAssembly (WASM). It aims to provide a simple and expressive syntax while leveraging the performance benefits of WebAssembly.
 
 ```
 fn main() {
