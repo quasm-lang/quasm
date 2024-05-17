@@ -43,6 +43,7 @@ function compileAndRun(src: string) {
     const codeGen = new CodeGenerator()
     const module = codeGen.visit(ast)
     Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(module.emitText()))
+    Deno.writeFileSync('./debug/output.stackIR.wat', new TextEncoder().encode(module.emitStackIR()))
     
     if (!module.validate()) {
         console.error("Validation error: The module is invalid.")
