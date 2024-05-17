@@ -16,7 +16,7 @@ import {
     UnaryExpression,
     ExpressionStatement,
 } from '../parser/ast.ts'
-import { SymbolTable } from './symbolTable.ts'
+import { VariableSymbol, SymbolTable } from './symbolTable.ts'
 import { DataType, TokenType } from '../lexer/token.ts'
 
 export class SemanticAnalyzer {
@@ -31,7 +31,7 @@ export class SemanticAnalyzer {
     }
 
     private visitProgram(program: Program) {
-        this.symbolTable.enterScope(new Map())
+        this.symbolTable.enterScope()
         
         for (const statement of program.statements) {
             this.visitStatement(statement)
@@ -76,18 +76,18 @@ export class SemanticAnalyzer {
         }
     
         // Add the variable to the symbol table
-        this.symbolTable.addVariable(name.value, finalType, 0, 'declaration')
+        this.symbolTable.define(name.value, finalType, 0, 'declaration')
     }
 
     private visitFnStatement(statement: FnStatement) {
         const { name, parameters, returnType, body } = statement
     
         // Create a new scope for the function
-        this.symbolTable.enterScope(new Map())
+        this.symbolTable.enterScope()
     
         // Add function parameters to the symbol table
         for (const param of parameters) {
-            this.symbolTable.addVariable(param.name.value, param.dataType, 0, 'parameter')
+            this.symbolTable.define(param.name.value, param.dataType, 0, 'parameter')
         }
     
         // Visit the function body
@@ -116,7 +116,7 @@ export class SemanticAnalyzer {
 
     private visitAssignmentStatement(statement: AssignmentStatement) {
         const { name, value } = statement
-        const variableType = this.symbolTable.getVariable(name.value)?.type
+        const variableType = (this.symbolTable.lookup(name.value) as VariableSymbol)?.dataType
         const valueType = this.visitExpression(value)
 
         if (!variableType) {
@@ -154,11 +154,11 @@ export class SemanticAnalyzer {
     }
 
     private visitIdentifier(identifier: Identifier): DataType {
-        const variable = this.symbolTable.getVariable(identifier.value)
+        const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
         };
-        return variable.type
+        return variable.dataType
     }
 
     private visitIntegerLiteral(_integer: IntegerLiteral): DataType {

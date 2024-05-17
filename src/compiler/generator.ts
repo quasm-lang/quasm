@@ -23,7 +23,7 @@ import {
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
-import { VariableInfo, SymbolTable } from './symbolTable.ts'
+import { SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
 import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 
 export class CodeGenerator {
@@ -173,7 +173,7 @@ export class CodeGenerator {
         const finalType = dataType || inferredType
         
         const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.addVariable(name, finalType, index, 'declaration')
+        this.symbolTable.define(name, finalType, index, 'declaration')
         
         return this.module.local.set(index, initExpr)
     }
@@ -183,12 +183,11 @@ export class CodeGenerator {
 
         // handle parameters
         const params = []
-        const newScope = new Map<string, VariableInfo>()
-        this.symbolTable.enterScope(newScope)
+        this.symbolTable.enterScope()
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            this.symbolTable.addVariable(param.name.value, param.dataType, index, 'parameter')
+            this.symbolTable.define(param.name.value, param.dataType, index, 'parameter')
         }
 
         // handle return type
@@ -200,10 +199,14 @@ export class CodeGenerator {
 
         // handles declared variables in the body
         const vars: binaryen.ExpressionRef[] = []
-        for (const [_name, value] of this.symbolTable.last()) {
-            if (value.reason === 'declaration') {
-                vars.push(getWasmType(value.type))
+        for (const [_name, value] of this.symbolTable.last().symbols) {
+            switch (value.type) {
+                case SymbolType.Variable:
+                    if ((value as VariableSymbol).reason === 'declaration') {
+                        vars.push(getWasmType((value as VariableSymbol).dataType))
+                    }
             }
+            
         }
         
         const wasmFunc = this.module.addFunction(
@@ -233,7 +236,7 @@ export class CodeGenerator {
         const value = this.visitExpression(statement.value)
 
         // Find the identifier in the current scope stack
-        const variable = this.symbolTable.getVariable(name)
+        const variable = this.symbolTable.lookup(name) as VariableSymbol
 
         if (variable === undefined) {
             throw new Error(`Variable ${name} doesn\'t exist`)
@@ -401,11 +404,11 @@ export class CodeGenerator {
     
 
     private visitIdentifier(identifier: Identifier): binaryen.ExpressionRef {
-        const variable = this.symbolTable.getVariable(identifier.value)
+        const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
         if (variable === undefined) {
             throw new Error(`Variable ${identifier.value} not found in scope`)
         }
         
-        return this.module.local.get(variable.index, getWasmType(variable.type))
+        return this.module.local.get(variable.index, getWasmType(variable.dataType))
     }
 }

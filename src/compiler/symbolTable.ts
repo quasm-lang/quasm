@@ -1,27 +1,59 @@
 import { DataType } from '../lexer/token.ts'
 
-export interface VariableInfo {
-    type: DataType
+export enum SymbolType {
+    Variable,
+    Function
+}
+
+export interface Symbol {
+    type: SymbolType
+    name: string
+}
+
+export interface VariableSymbol extends Symbol {
+    type: SymbolType.Variable
+    dataType: DataType
     index: number
     reason: 'declaration' | 'parameter'
 }
 
-export interface FunctionInfo {
+interface FunctionSymbol extends Symbol {
+    type: SymbolType.Function
     params: DataType[]
     returnType: DataType
 }
 
-export class SymbolTable {
-    private functions: Map<string, FunctionInfo>
-    private scopes: Map<string, VariableInfo>[]
+class Scope {
+    symbols: Map<string, Symbol>
 
     constructor() {
-        this.scopes = [new Map()]
-        this.functions = new Map()
+        this.symbols = new Map()
     }
 
-    enterScope(newScope: Map<string, VariableInfo>) {
-        this.scopes.push(new Map(newScope))
+    define(symbol: Symbol) {
+        this.symbols.set(symbol.name, symbol)
+    }
+
+    lookup(name: string): Symbol | undefined {
+        return this.symbols.get(name)
+    }
+
+    size() {
+        return this.symbols.size
+    }
+}
+
+export class SymbolTable {
+    private topLevel: Map<string, FunctionSymbol>
+    private scopes: Scope[]
+
+    constructor() {
+        this.scopes = [new Scope()]
+        this.topLevel = new Map()
+    }
+
+    enterScope() {
+        this.scopes.push(new Scope())
     }
     
     exitScope() {
@@ -32,27 +64,35 @@ export class SymbolTable {
         return this.scopes[this.scopes.length-1]
     }
 
-    addVariable(name: string, type: DataType, index: number, reason: 'declaration' | 'parameter') {
+    define(name: string, dataType: DataType, index: number, reason: 'declaration' | 'parameter') {
         const currentScope = this.scopes[this.scopes.length - 1]
-        currentScope.set(name, { type, index, reason })
+        currentScope.define({
+            type: SymbolType.Variable,
+            name,
+            dataType,
+            index,
+            reason
+        } as VariableSymbol)
     }
 
-    getVariable(name: string): VariableInfo | undefined {
-        if (this.last().get(name)) {
-            return this.last().get(name)
-        }
-        return undefined
+    lookup(name: string): Symbol | undefined {
+        return this.last().lookup(name)
     }
 
     currentScopeLastIndex(): number {
-        return this.scopes[this.scopes.length - 1].size
+        return this.scopes[this.scopes.length - 1].size()
     }
 
     addFunction(name: string, params: DataType[], returnType: DataType) {
-        this.functions.set(name, { params, returnType })
+        this.topLevel.set(name, {
+            name,
+            type: SymbolType.Function,
+            params,
+            returnType,
+        } as FunctionSymbol)
     }
 
-    getFunction(name: string): FunctionInfo | undefined {
-        return this.functions.get(name)
+    getFunction(name: string): FunctionSymbol | undefined {
+        return this.topLevel.get(name)
     }
 }
