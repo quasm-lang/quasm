@@ -25,7 +25,7 @@ export function parseExpressionStatement(parser: Parser): ExpressionStatement {
 
 export function parseBlockStatement(parser: Parser): BlockStatement {
     parser.match(TokenType.LeftBrace)
-
+ 
     const statements: Statement[] = []
     
     while (
