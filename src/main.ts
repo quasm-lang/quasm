@@ -3,8 +3,8 @@ import { Parser } from './parser/parser.ts'
 import { CodeGenerator } from './compiler/generator.ts'
 
 import { Command } from './deps.ts'
-import { ensureDirSync } from 'https://deno.land/std@0.223.0/fs/mod.ts'
-import { basename, join } from 'https://deno.land/std@0.224.0/path/mod.ts'
+import { ensureDirSync } from 'std/fs/mod.ts'
+import { basename, join } from 'std/path/mod.ts'
 
 await new Command()
     .name('Quasm')

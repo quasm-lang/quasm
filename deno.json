@@ -1,0 +1,11 @@
+{
+    "imports": {
+        "std/": "https://deno.land/std@0.224.0/",
+        "cliffy/": "https://deno.land/x/cliffy@v1.0.0-rc.4/",
+        "binaryen": "npm:binaryen"
+    },
+    "tasks": {
+        "run": "deno run --allow-read=. --allow-write src/main.ts run",
+        "compile": "deno run --allow-read=. --allow-write src/main.ts compile"
+    }
+}
