@@ -82,6 +82,7 @@ export class CodeGenerator {
             this.module.setMemory(1, 1, 'memory', this.segment)
         }
 
+        this.module.autoDrop()
         
         return this.module
     }
@@ -297,8 +298,6 @@ export class CodeGenerator {
 
     private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
         const expression = this.visitExpression(statement.expression)
-        // Implicitly drop the result of the expression from the stack if it's not being used
-        this.module.autoDrop()
         return expression
     }
     
