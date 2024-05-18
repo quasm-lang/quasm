@@ -4,33 +4,46 @@ import { CodeGenerator } from './compiler/generator.ts'
 
 import { Command } from './deps.ts'
 import { ensureDirSync } from 'https://deno.land/std@0.223.0/fs/mod.ts'
+import { basename, join } from 'https://deno.land/std@0.224.0/path/mod.ts'
 
-const program = new Command()
-program
+await new Command()
     .name('Quasm')
+    .version('0.0.3')
     .description('Compiles to WASM')
-    .version('0.0.2')
+    .globalOption('-d, --debug', 'Enable debug output.')
+    .action(() => console.log('Please use proper commands!'))
 
-program.command('run')
-    .description('Compile internally and run')
-    .argument('<src>', 'name')
-    .action((str) => {
-        try {
-            const src = Deno.readTextFileSync(str)
-            compileAndRun(src)
-        } catch (error) {
-            if (error instanceof Deno.errors.NotFound) {
-                console.error(`File '${str}' was not found!`)
-            } else {
-                // otherwise re-throw
-                throw error
-            }
-        }
+    .command('run', 'Compile internally and run')
+    .arguments("<source:string>")
+    .action((_, ...args) => {
+        const file = args[0]
+        compileAndRun(load(file))
     })
 
-program.parse()
+    .command("compile", 'Compile to WASM binary')
+    .arguments("<file:string> [dest:string]")
+    .action((_, ...args) => {
+        const file = args[0]
+        const dest = args[1] ? args[1] : file.replace(/\.[^/.]+$/, '')
+        compile(load(file), dest)
+    })
+    .parse(Deno.args)
 
-function compileAndRun(src: string) {
+function load(file: string): string {
+    try {
+        const src = Deno.readTextFileSync(file)
+        return src
+    } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+            console.error(`File '${file}' was not found!`)
+            Deno.exit(1)
+        } else {
+            throw error
+        }
+    }
+}
+
+function emit(src: string) {
     // Parsing
     const lexer = new Lexer(src)
     const parser = new Parser(lexer)
@@ -44,15 +57,21 @@ function compileAndRun(src: string) {
     const module = codeGen.visit(ast)
     Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(module.emitText()))
     Deno.writeFileSync('./debug/output.stackIR.wat', new TextEncoder().encode(module.emitStackIR()))
-    
+
     if (!module.validate()) {
         console.error("Validation error: The module is invalid.")
         Deno.exit(1)
     }
-    
+
     module.optimize()
     Deno.writeFileSync('./debug/output.optimized.wat', new TextEncoder().encode(module.emitText()))
     Deno.writeFileSync('./debug/output.optimized.ams.js', new TextEncoder().encode(module.emitAsmjs()))
+
+    return module
+}
+
+function compileAndRun(src: string) {
+    const module = emit(src)
 
     const wasmModule = new WebAssembly.Module(module.emitBinary())
     const wasmInstance = new WebAssembly.Instance(wasmModule, {
@@ -72,4 +91,11 @@ function compileAndRun(src: string) {
     console.log('>')
     const main = wasmInstance.exports.main as CallableFunction
     main()
+}
+
+function compile(src: string, dest: string) {
+    const module = emit(src)
+
+    ensureDirSync('./dist')
+    Deno.writeFileSync(join('dist', `${basename(dest)}.wasm`), module.emitBinary())
 }
