@@ -1,5 +1,5 @@
 import { Parser } from '../parser.ts'
-import { AstType, IfStatement, WhileStatement } from '../ast.ts'
+import { AstType, BlockStatement, IfStatement, WhileStatement } from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { parseExpression } from '../expressions/mod.ts'
 import { parseBlockStatement } from './mod.ts' 
@@ -20,12 +20,20 @@ export function parseWhileStatement(parser: Parser): WhileStatement {
 export function parseIfStatement(parser: Parser): IfStatement {
     parser.match(TokenType.If)
     const condition = parseExpression(parser)
-    const body = parseBlockStatement(parser)
+    const consequent = parseBlockStatement(parser)
+
+    let alternate: BlockStatement | undefined
+    if (parser.eq(TokenType.Else)) {
+        parser.match(TokenType.Else)
+        
+        alternate = parseBlockStatement(parser)
+    }
     
     return {
         type: AstType.IfStatement,
         condition,
-        body,
+        consequent,
+        alternate,
         location: parser.getLocation()
     }
 }

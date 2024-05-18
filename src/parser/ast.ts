@@ -97,7 +97,8 @@ export interface StructStatement extends Statement {
 export interface IfStatement extends Statement {
     type: AstType.IfStatement
     condition: Expression
-    body: BlockStatement
+    consequent: BlockStatement
+    alternate?: IfStatement | BlockStatement
 }
 
 export interface WhileStatement extends Statement {

@@ -19,7 +19,8 @@ import {
     UnaryExpression,
     FloatLiteral,
     WhileStatement,
-    IfStatement
+    IfStatement,
+    BlockStatement
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
@@ -263,18 +264,18 @@ export class CodeGenerator {
 
     private visitIfStatement(statement: IfStatement): binaryen.ExpressionRef {
         const condition = this.visitExpression(statement.condition)
-        const body = statement.body.statements.map(statement => this.visitStatement(statement))
+        const consequent = statement.consequent.statements.map(statement => this.visitStatement(statement))
 
         // TODO: possibly nest the if blocks to achieve if-else blocks
-        // TODO: else block
-        // let elseBlock = null;
-        // if (statement.elseBody) {
-        //     elseBlock = this.module.block(null, statement.elseBody.statements.map(stmt => this.visitStatement(stmt)), binaryen.none);
-        // }
+        let alternate: binaryen.ExpressionRef[] = []
+        if (statement.alternate) {
+            alternate = (statement.alternate as BlockStatement).statements.map(statement => this.visitStatement(statement))
+        }
 
         return this.module.if(
             condition,
-            this.module.block(null, body)
+            this.module.block(null, consequent),
+            alternate.length > 0 ? this.module.block(null, alternate) : undefined
         )
     }
 
