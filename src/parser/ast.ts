@@ -9,7 +9,7 @@ export enum AstType {
     LetStatement = 'LET_STATEMENT',
     BlockStatement = 'BLOCK_STATEMENT',
     ExpressionStatement = 'EXPRESSION_STATEMENT',
-    FnStatement = 'FN_STATEMENT',
+    FuncStatement = 'FUNC_STATEMENT',
     ReturnStatement = 'RETURN_STATEMENT',
     AssignmentStatement = 'ASSIGNMENT_STATEMENT',
     StructStatement = 'STRUCT_STATEMENT',
@@ -68,8 +68,8 @@ export interface LetStatement extends Statement {
     spec: Spec
 }
 
-export interface FnStatement extends Statement {
-    type: AstType.FnStatement
+export interface FuncStatement extends Statement {
+    type: AstType.FuncStatement
     name: Identifier
     parameters: Field[]
     returnType: DataType

@@ -1,3 +1,3 @@
-fn main() {
+func main() {
     printstr('Hello World!');
 }

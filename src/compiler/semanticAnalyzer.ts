@@ -5,7 +5,7 @@ import {
     Expression,
     BinaryExpression,
     LetStatement,
-    FnStatement,
+    FuncStatement,
     ReturnStatement,
     Identifier,
     IntegerLiteral,
@@ -45,8 +45,8 @@ export class SemanticAnalyzer {
             case AstType.LetStatement:
                 this.visitLetStatement(statement as LetStatement)
                 break
-            case AstType.FnStatement:
-                this.visitFnStatement(statement as FnStatement)
+            case AstType.FuncStatement:
+                this.visitFnStatement(statement as FuncStatement)
                 break
             case AstType.ReturnStatement:
                 this.visitReturnStatement(statement as ReturnStatement)
@@ -79,7 +79,7 @@ export class SemanticAnalyzer {
         this.symbolTable.define(name.value, finalType, 0, 'declaration')
     }
 
-    private visitFnStatement(statement: FnStatement) {
+    private visitFnStatement(statement: FuncStatement) {
         const { name, parameters, returnType, body } = statement
     
         // Create a new scope for the function
@@ -96,15 +96,15 @@ export class SemanticAnalyzer {
         }
     
         // Check the return type of the function
-        const lastStatement = body.statements[body.statements.length - 1]
-        if (lastStatement.type === AstType.ReturnStatement) {
-            const actualReturnType = this.visitExpression((lastStatement as ReturnStatement).value)
-            if (actualReturnType !== returnType) {
-                throw new Error(`Type mismatch: Expected return type ${returnType}, but got ${actualReturnType} for function '${name.value}'`)
-            }
-        } else if (returnType !== DataType.none) {
-            throw new Error(`Missing return statement for function '${name.value}' with return type ${returnType}`)
-        }
+        // const lastStatement = body.statements[body.statements.length - 1]
+        // if (lastStatement.type === AstType.ReturnStatement) {
+        //     const actualReturnType = this.visitExpression((lastStatement as ReturnStatement).value)
+        //     if (actualReturnType !== returnType) {
+        //         throw new Error(`Type mismatch: Expected return type ${returnType}, but got ${actualReturnType} for function '${name.value}'`)
+        //     }
+        // } else if (returnType !== DataType.none) {
+        //     throw new Error(`Missing return statement for function '${name.value}' with return type ${returnType}`)
+        // }
     
         // Exit the function scope
         this.symbolTable.exitScope()

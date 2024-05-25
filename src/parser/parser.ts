@@ -9,7 +9,7 @@ import { Lexer } from '../lexer/mod.ts'
 import {
     Program,
     Statement,
-    FnStatement,
+    FuncStatement,
     Field,
     SourceLocation,
     AstType
@@ -17,7 +17,7 @@ import {
 import { parseIdentifier} from './expressions/core.ts'
 
 import {
-    parseFnStatement,
+    parseFuncStatement,
     parseReturnStatement,
     parseLetStatement,
     parseAssignmentStatement,
@@ -123,8 +123,8 @@ export class Parser {
     parseStatement(): Statement {
         if (this.eq(TokenType.Export)) {
             return this.parseExport()
-        } else if (this.eq(TokenType.Fn)) {
-            return parseFnStatement(this)
+        } else if (this.eq(TokenType.Func)) {
+            return parseFuncStatement(this)
         } else if (this.eq(TokenType.Return)) {
             return parseReturnStatement(this)
         } else if (this.eq(TokenType.Let)) {
@@ -143,11 +143,11 @@ export class Parser {
     }
 
     // Misc
-    parseExport(): FnStatement {
+    parseExport(): FuncStatement {
         this.match(TokenType.Export)
         
-        if (this.eq(TokenType.Fn)) {
-            const statement = parseFnStatement(this)
+        if (this.eq(TokenType.Func)) {
+            const statement = parseFuncStatement(this)
             statement.exported = true
             return statement
         }

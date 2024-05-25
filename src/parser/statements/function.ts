@@ -1,12 +1,12 @@
 import { Parser } from '../parser.ts'
-import { AstType, FnStatement, ReturnStatement } from '../ast.ts'
+import { AstType, FuncStatement, ReturnStatement } from '../ast.ts'
 import { DataType, TokenType } from '../../lexer/token.ts'
 import { parseExpression } from '../expressions/mod.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseBlockStatement } from './mod.ts'
 
-export function parseFnStatement(parser: Parser): FnStatement {
-    parser.match(TokenType.Fn)
+export function parseFuncStatement(parser: Parser): FuncStatement {
+    parser.match(TokenType.Func)
     const name = parseIdentifier(parser)
     parser.match(TokenType.LeftParen)
     const parameters = parser.parseFields(TokenType.Comma, TokenType.RightParen)
@@ -22,7 +22,7 @@ export function parseFnStatement(parser: Parser): FnStatement {
     const block = parseBlockStatement(parser)
 
     return {
-        type: AstType.FnStatement,
+        type: AstType.FuncStatement,
         name,
         parameters,
         returnType,

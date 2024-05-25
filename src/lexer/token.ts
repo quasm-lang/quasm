@@ -33,7 +33,7 @@ export enum TokenType {
     RightBracket = ']',
 
     Let = 'let',
-    Fn = 'fn',
+    Func = 'func',
     Return = 'return',
     True = 'true',
     False = 'false',
@@ -94,7 +94,7 @@ export const keywords: Record<string, TokenType> = {
     'f64': TokenType.Type,
     'none': TokenType.Type,
     'let': TokenType.Let,
-    'fn': TokenType.Fn,
+    'func': TokenType.Func,
     'return': TokenType.Return,
     'true': TokenType.True,
     'false': TokenType.False,

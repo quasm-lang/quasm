@@ -7,7 +7,7 @@ import {
     Statement,
     Expression,
     LetStatement,
-    FnStatement,
+    FuncStatement,
     ReturnStatement,
     ExpressionStatement,
     BinaryExpression,
@@ -89,8 +89,8 @@ export class CodeGenerator {
 
     private collectFunctionDeclarations(program: Program) {
         for (const statement of program.statements) {
-            if (statement.type == AstType.FnStatement) {
-                const func = statement as FnStatement
+            if (statement.type == AstType.FuncStatement) {
+                const func = statement as FuncStatement
                 const name = func.name.value
                 const params = func.parameters.map(param => param.dataType)
                 const returnType = func.returnType
@@ -104,7 +104,7 @@ export class CodeGenerator {
     private visitProgram(program: Program): binaryen.ExpressionRef[] {
         const statements: binaryen.ExportRef[] = []
         for (const statement of program.statements) {
-            if (statement.type !== AstType.FnStatement) {
+            if (statement.type !== AstType.FuncStatement) {
                 throw new Error(`Invalid statement outside of function at line ${statement.location.start.line}`)
             }
             statements.push(this.visitStatement(statement))
@@ -118,8 +118,8 @@ export class CodeGenerator {
                 return this.visitExpressionStatement(statement as ExpressionStatement)
             case AstType.LetStatement:
                 return this.visitLetStatement(statement as LetStatement)
-            case AstType.FnStatement:
-                return this.visitFnStatement(statement as FnStatement)
+            case AstType.FuncStatement:
+                return this.visitFnStatement(statement as FuncStatement)
             case AstType.ReturnStatement:
                 return this.visitReturnStatement(statement as ReturnStatement)
             case AstType.AssignmentStatement:
@@ -196,7 +196,7 @@ export class CodeGenerator {
         return this.module.local.set(index, initExpr)
     }
 
-    private visitFnStatement(func: FnStatement): binaryen.ExpressionRef {
+    private visitFnStatement(func: FuncStatement): binaryen.ExpressionRef {
         const name = func.name.value
 
         // handle parameters
