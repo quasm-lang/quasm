@@ -2,12 +2,12 @@
 Quasm is a programming language designed to compile directly to WebAssembly (WASM). It aims to provide a simple and expressive syntax while leveraging the performance benefits of WebAssembly.
 
 ```
-fn main() {
+func main() {
     let result = add(12, 28);
     print(result);
 }
 
-fn add(a i32, b i32) -> i32 {
+func add(a i32, b i32) -> i32 {
     return a + b;
 }
 ```
@@ -16,7 +16,7 @@ fn add(a i32, b i32) -> i32 {
 
 or simply
 
-```./run.sh run [path].qs```
+```deno task run [path].qs```
 
 
 ## Contributing
