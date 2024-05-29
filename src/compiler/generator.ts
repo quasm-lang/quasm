@@ -32,10 +32,12 @@ export class CodeGenerator {
     private symbolTable: SymbolTable
     private memoryOffset = 0
     private segment: binaryen.MemorySegment[] = []
+    private semanticAnalyzer: SemanticAnalyzer
 
     constructor() {
         this.module = new binaryen.Module()
         this.symbolTable = new SymbolTable()
+        this.semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
         
         this.module.addFunctionImport(
             'print',
@@ -134,37 +136,7 @@ export class CodeGenerator {
     }
 
     private inferDataType(expression: Expression): DataType {
-        switch (expression.type) {
-            case AstType.IntegerLiteral:
-                return DataType.i32
-            case AstType.FloatLiteral:
-                return DataType.f32
-            case AstType.StringLiteral:
-                return DataType.i32 // Assuming strings are represented as pointers (i32)
-            case AstType.Identifier: {
-                const expr = expression as Identifier
-                const variable = this.symbolTable.lookup(expr.value) as VariableSymbol
-
-                if (variable === undefined) {
-                    throw new Error(`Callee ${variable} doesn't exist`)
-                }
-
-                return variable.dataType
-            }
-            case AstType.CallExpression: {
-                const expr = expression as CallExpression
-                const callee = this.symbolTable.getFunction(expr.callee.value)
-                
-                if (callee === undefined) {
-                    throw new Error(`Callee ${expr.callee.value} doesn't exist`)
-                }
-
-                return callee.returnType
-            }
-            // Add more cases for other expression types as needed
-            default:
-                throw new Error(`Cannot infer data type from expression of type ${expression.type}`)
-        }
+        return this.semanticAnalyzer.visitExpression(expression)
     }    
 
     private visitLetStatement(statement: LetStatement): binaryen.ExpressionRef {
