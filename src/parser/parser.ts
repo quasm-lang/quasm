@@ -160,7 +160,7 @@ export class Parser {
 
         while (!this.eq(closingToken)) {
             const name = parseIdentifier(this)
-
+            this.match(TokenType.Colon)
             const dataTypeToken = this.matchDataType()
 
             const param: Field = {
