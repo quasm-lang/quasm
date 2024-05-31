@@ -1,4 +1,4 @@
-import { AstType, BinaryExpression, CallExpression, Expression, Identifier, UnaryExpression } from '../ast.ts'
+import { AstType, BinaryExpression, CallExpression, Expression, Field, Identifier, UnaryExpression } from '../ast.ts'
 import { Parser } from '../parser.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { parseFloatLiteral, parseIdentifier, parseIntegerLiteral, parseStringLiteral } from './core.ts'
@@ -122,4 +122,28 @@ export function parseCallArguments(parser: Parser): Expression[] {
     }
 
     return args
+}
+
+export function parseFields(parser: Parser, delimiter: TokenType | null, closingToken: TokenType): Field[] {
+    const parameters: Field[] = []
+
+    while (!parser.eq(closingToken)) {
+        const name = parseIdentifier(parser)
+        parser.match(TokenType.Colon)
+        const dataTypeToken = parser.matchDataType()
+
+        const param: Field = {
+            type: AstType.Field,
+            name: name,
+            dataType: dataTypeToken.literal,
+            location: parser.getLocation()
+        }
+        parameters.push(param)
+
+        if (!parser.eq(closingToken) && delimiter !== null) {
+            parser.match(delimiter)
+        }
+    }
+
+    return parameters
 }

@@ -154,28 +154,4 @@ export class Parser {
 
         throw new Error('Parser error: Unexpected token after export.')
     }
-
-    parseFields(delimiter: TokenType | null, closingToken: TokenType): Field[] {
-        const parameters: Field[] = []
-
-        while (!this.eq(closingToken)) {
-            const name = parseIdentifier(this)
-            this.match(TokenType.Colon)
-            const dataTypeToken = this.matchDataType()
-
-            const param: Field = {
-                type: AstType.Field,
-                name: name,
-                dataType: dataTypeToken.literal,
-                location: this.getLocation()
-            }
-            parameters.push(param)
-    
-            if (!this.eq(closingToken) && delimiter !== null) {
-                this.match(delimiter)
-            }
-        }
-
-        return parameters
-    }
 }

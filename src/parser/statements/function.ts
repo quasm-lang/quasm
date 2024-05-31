@@ -1,7 +1,7 @@
 import { Parser } from '../parser.ts'
 import { AstType, FuncStatement, ReturnStatement } from '../ast.ts'
 import { DataType, TokenType } from '../../lexer/token.ts'
-import { parseExpression } from '../expressions/mod.ts'
+import { parseExpression, parseFields } from '../expressions/mod.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseBlockStatement } from './mod.ts'
 
@@ -9,7 +9,7 @@ export function parseFuncStatement(parser: Parser): FuncStatement {
     parser.match(TokenType.Func)
     const name = parseIdentifier(parser)
     parser.match(TokenType.LeftParen)
-    const parameters = parser.parseFields(TokenType.Comma, TokenType.RightParen)
+    const parameters = parseFields(parser, TokenType.Comma, TokenType.RightParen)
     parser.match(TokenType.RightParen)
 
     let returnType: DataType = DataType.none // Default return type
