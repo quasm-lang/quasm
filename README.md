@@ -1,6 +1,8 @@
 # Quasm
 Quasm is a programming language designed to compile directly to WebAssembly (WASM). It aims to provide a simple and expressive syntax while leveraging the performance benefits of WebAssembly.
 
+**Important Note: Quasm is currently in its early, immature state and is not yet ready for production use. The language is under active development and may undergo significant changes.**
+
 ```
 func main() {
     let result = add(12, 28);
