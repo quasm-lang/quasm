@@ -30,7 +30,7 @@ export class SemanticAnalyzer {
         this.visitProgram(ast)
     }
 
-    private visitProgram(program: Program) {
+    visitProgram(program: Program) {
         this.symbolTable.enterScope()
         
         for (const statement of program.statements) {
@@ -40,7 +40,7 @@ export class SemanticAnalyzer {
         this.symbolTable.exitScope()
     }
 
-    private visitStatement(statement: Statement) {
+    visitStatement(statement: Statement) {
         switch (statement.type) {
             case AstType.LetStatement:
                 this.visitLetStatement(statement as LetStatement)
@@ -60,7 +60,7 @@ export class SemanticAnalyzer {
         }
     }
 
-    private visitLetStatement(statement: LetStatement) {
+    visitLetStatement(statement: LetStatement) {
         const { name, dataType, value } = statement.spec
     
         let inferredType: DataType | undefined
@@ -79,7 +79,7 @@ export class SemanticAnalyzer {
         this.symbolTable.define(name.value, finalType, 0, 'declaration')
     }
 
-    private visitFnStatement(statement: FuncStatement) {
+    visitFnStatement(statement: FuncStatement) {
         const { name, parameters, returnType, body } = statement
     
         // Create a new scope for the function
@@ -110,11 +110,11 @@ export class SemanticAnalyzer {
         this.symbolTable.exitScope()
     }
 
-    private visitReturnStatement(statement: ReturnStatement) {
+    visitReturnStatement(statement: ReturnStatement) {
         this.visitExpression(statement.value)
     }
 
-    private visitAssignmentStatement(statement: AssignmentStatement) {
+    visitAssignmentStatement(statement: AssignmentStatement) {
         const { name, value } = statement
         const variableType = (this.symbolTable.lookup(name.value) as VariableSymbol)?.dataType
         const valueType = this.visitExpression(value)
@@ -128,11 +128,11 @@ export class SemanticAnalyzer {
         }
     }
 
-    private visitExpressionStatement(statement: ExpressionStatement) {
+    visitExpressionStatement(statement: ExpressionStatement) {
         this.visitExpression(statement.expression)
     }
 
-    private visitExpression(expression: Expression): DataType {
+    visitExpression(expression: Expression): DataType {
         switch (expression.type) {
             case AstType.Identifier:
                 return this.visitIdentifier(expression as Identifier)
@@ -153,7 +153,7 @@ export class SemanticAnalyzer {
         }
     }
 
-    private visitIdentifier(identifier: Identifier): DataType {
+    visitIdentifier(identifier: Identifier): DataType {
         const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
@@ -161,19 +161,19 @@ export class SemanticAnalyzer {
         return variable.dataType
     }
 
-    private visitIntegerLiteral(_integer: IntegerLiteral): DataType {
+    visitIntegerLiteral(_integer: IntegerLiteral): DataType {
         return DataType.i32
     }
 
-    private visitFloatLiteral(_float: FloatLiteral): DataType {
+    visitFloatLiteral(_float: FloatLiteral): DataType {
         return DataType.f32
     }
 
-    private visitStringLiteral(_str: StringLiteral): DataType {
+    visitStringLiteral(_str: StringLiteral): DataType {
         return DataType.i32 // Assuming strings are represented as pointers (i32)
     }
 
-    private visitBinaryExpression(expression: BinaryExpression): DataType {
+    visitBinaryExpression(expression: BinaryExpression): DataType {
         const leftType = this.visitExpression(expression.left)
         const rightType = this.visitExpression(expression.right)
     
@@ -184,7 +184,7 @@ export class SemanticAnalyzer {
         return leftType
     }
 
-    private visitUnaryExpression(expression: UnaryExpression): DataType {
+    visitUnaryExpression(expression: UnaryExpression): DataType {
         const rightType = this.visitExpression(expression.right)
 
         if (expression.operator === TokenType.Minus && rightType !== DataType.i32 && rightType !== DataType.f32) {
@@ -194,7 +194,7 @@ export class SemanticAnalyzer {
         return rightType
     }
     
-    private visitCallExpression(expression: CallExpression): DataType {
+    visitCallExpression(expression: CallExpression): DataType {
         const functionInfo = this.symbolTable.getFunction(expression.callee.value)
 
         if (!functionInfo) {
