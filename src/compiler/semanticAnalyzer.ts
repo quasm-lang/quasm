@@ -16,7 +16,7 @@ import {
     UnaryExpression,
     ExpressionStatement,
 } from '../parser/ast.ts'
-import { VariableSymbol, SymbolTable } from './symbolTable.ts'
+import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol } from './symbolTable.ts'
 import { DataType, TokenType } from '../lexer/token.ts'
 
 export class SemanticAnalyzer {
@@ -76,7 +76,7 @@ export class SemanticAnalyzer {
         }
     
         // Add the variable to the symbol table
-        this.symbolTable.define(name.value, finalType, 0, 'declaration')
+        this.symbolTable.define({ type: SymbolType.Variable, name: name.value, dataType: finalType, index: 0, reason: 'declaration' } as VariableSymbol)
     }
 
     visitFnStatement(statement: FuncStatement) {
@@ -87,7 +87,7 @@ export class SemanticAnalyzer {
     
         // Add function parameters to the symbol table
         for (const param of parameters) {
-            this.symbolTable.define(param.name.value, param.dataType, 0, 'parameter')
+            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index: 0, reason: 'parameter' } as VariableSymbol)
         }
     
         // Visit the function body
@@ -195,25 +195,34 @@ export class SemanticAnalyzer {
     }
     
     visitCallExpression(expression: CallExpression): DataType {
-        const functionInfo = this.symbolTable.getFunction(expression.callee.value)
+        const symbol = this.symbolTable.getFunction(expression.callee.value)
 
-        if (!functionInfo) {
+        if (!symbol) {
             throw new Error(`Undefined function '${expression.callee.value}'`)
         }
 
-        if (expression.arguments.length !== functionInfo.params.length) {
-            throw new Error(`Incorrect number of arguments for function '${expression.callee.value}'. Expected ${functionInfo.params.length}, but got ${expression.arguments.length}`)
-        }
-
-        for (let i = 0; i < expression.arguments.length; i++) {
-            const argType = this.visitExpression(expression.arguments[i])
-            const paramType = functionInfo.params[i]
-    
-            if (argType !== paramType) {
-                throw new Error(`Type mismatch: Argument ${i + 1} of function '${expression.callee.value}' expected type ${paramType}, but got ${argType}`)
+        switch (symbol.type) {
+            case SymbolType.Function: {
+                const functionInfo = symbol as FunctionSymbol 
+                if (expression.arguments.length !== functionInfo.params.length) {
+                    throw new Error(`Incorrect number of arguments for function '${expression.callee.value}'. Expected ${functionInfo.params.length}, but got ${expression.arguments.length}`)
+                }
+        
+                for (let i = 0; i < expression.arguments.length; i++) {
+                    const argType = this.visitExpression(expression.arguments[i])
+                    const paramType = functionInfo.params[i]
+            
+                    if (argType !== paramType) {
+                        throw new Error(`Type mismatch: Argument ${i + 1} of function '${expression.callee.value}' expected type ${paramType}, but got ${argType}`)
+                    }
+                }
+                return functionInfo.returnType
             }
-        }
-
-        return functionInfo.returnType
+            case SymbolType.Struct: {
+                return DataType.i32
+            }
+            default:
+                throw new Error('Placeholder')
+        } 
     }
 }

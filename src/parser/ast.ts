@@ -12,7 +12,7 @@ export enum AstType {
     FuncStatement = 'FUNC_STATEMENT',
     ReturnStatement = 'RETURN_STATEMENT',
     AssignmentStatement = 'ASSIGNMENT_STATEMENT',
-    StructStatement = 'STRUCT_STATEMENT',
+    StructDeclaration = 'STRUCT_DECLARATION',
     IfStatement = 'IF_STATEMENT',
     WhileStatement = 'WHILE_STATEMENT',
     PrefixExpression = 'PREFIX_EXPRESSION',
@@ -88,8 +88,8 @@ export interface AssignmentStatement extends Statement {
     value: Expression
 }
 
-export interface StructStatement extends Statement {
-    type: AstType.StructStatement
+export interface StructDeclaration extends Statement {
+    type: AstType.StructDeclaration
     name: Identifier
     fields: Field[]
 }

@@ -2,7 +2,8 @@ import { DataType } from '../lexer/token.ts'
 
 export enum SymbolType {
     Variable,
-    Function
+    Function,
+    Struct
 }
 
 export interface Symbol {
@@ -17,7 +18,14 @@ export interface VariableSymbol extends Symbol {
     reason: 'declaration' | 'parameter'
 }
 
-interface FunctionSymbol extends Symbol {
+export interface StructSymbol extends Symbol {
+    type: SymbolType.Struct
+    name: string
+    members: Map<string, DataType>
+    size: number
+}
+
+export interface FunctionSymbol extends Symbol {
     type: SymbolType.Function
     params: DataType[]
     returnType: DataType
@@ -44,7 +52,7 @@ class Scope {
 }
 
 export class SymbolTable {
-    private topLevel: Map<string, FunctionSymbol>
+    private topLevel: Map<string, Symbol>
     private scopes: Scope[]
 
     constructor() {
@@ -64,15 +72,9 @@ export class SymbolTable {
         return this.scopes[this.scopes.length-1]
     }
 
-    define(name: string, dataType: DataType, index: number, reason: 'declaration' | 'parameter') {
+    define(symbol: Symbol) {
         const currentScope = this.scopes[this.scopes.length - 1]
-        currentScope.define({
-            type: SymbolType.Variable,
-            name,
-            dataType,
-            index,
-            reason
-        } as VariableSymbol)
+        currentScope.define(symbol)
     }
 
     lookup(name: string): Symbol | undefined {
@@ -83,16 +85,12 @@ export class SymbolTable {
         return this.scopes[this.scopes.length - 1].size()
     }
 
-    addFunction(name: string, params: DataType[], returnType: DataType) {
-        this.topLevel.set(name, {
-            name,
-            type: SymbolType.Function,
-            params,
-            returnType,
-        } as FunctionSymbol)
+    // addFunction(name: string, params: DataType[], returnType: DataType) {
+    addFunction(symbol: Symbol) {
+        this.topLevel.set(symbol.name, symbol)
     }
 
-    getFunction(name: string): FunctionSymbol | undefined {
+    getFunction(name: string): Symbol | undefined {
         return this.topLevel.get(name)
     }
 }

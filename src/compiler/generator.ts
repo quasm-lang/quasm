@@ -20,11 +20,12 @@ import {
     FloatLiteral,
     WhileStatement,
     IfStatement,
-    BlockStatement
+    BlockStatement,
+    StructDeclaration
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
-import { SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
+import { FunctionSymbol, StructSymbol, SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
 import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 
 export class CodeGenerator {
@@ -55,8 +56,8 @@ export class CodeGenerator {
             binaryen.none
         )
         
-        this.symbolTable.addFunction('print', [DataType.i32], DataType.none)
-        this.symbolTable.addFunction('printstr', [DataType.i32], DataType.none)
+        this.symbolTable.addFunction({ type: SymbolType.Function, name: 'print', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
+        this.symbolTable.addFunction({ type: SymbolType.Function, name: 'printstr', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
     }
     
     public visit(node: Node) {
@@ -64,8 +65,11 @@ export class CodeGenerator {
             throw new Error(`Not valid program: ${node.type}`)
 
         try {
-            // First pass: Collect function declarations
-            this.collectFunctionDeclarations(node as Program)
+            this.module.setMemory(1, 16, 'memory')
+            this.module.addGlobal('_memoryOffset', binaryen.i32, true, this.module.i32.const(0))
+
+            // First pass: Collect function and struct declarations
+            this.collectFirstPass(node as Program)
 
             // Second pass: Semantic Analyzer
             const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
@@ -89,16 +93,55 @@ export class CodeGenerator {
         return this.module
     }
 
-    private collectFunctionDeclarations(program: Program) {
+    private collectFirstPass(program: Program) {
         for (const statement of program.statements) {
-            if (statement.type == AstType.FuncStatement) {
+            if (statement.type === AstType.FuncStatement) {
                 const func = statement as FuncStatement
                 const name = func.name.value
                 const params = func.parameters.map(param => param.dataType)
                 const returnType = func.returnType
 
                 // Add the function information to the symbol table
-                this.symbolTable.addFunction(name, params, returnType)
+                this.symbolTable.addFunction({ type: SymbolType.Function, name, params, returnType } as FunctionSymbol)
+            } else if (statement.type === AstType.StructDeclaration) {
+                const struct = statement as StructDeclaration
+                const name = struct.name.value
+                const members = new Map<string, DataType>()
+
+                let size = 0
+                for (const field of struct.fields) {
+                    if (field.dataType === DataType.i32) {
+                        size = size + 4
+                    }
+                    members.set(field.name.value, field.dataType)
+                }
+                this.symbolTable.addFunction({ type: SymbolType.Struct, name, members, size } as StructSymbol)
+
+                // Generate a function that creates a pointer to the struct
+                const functionName = `__newStruct_${name}`
+                const wasmParams = struct.fields.map(field => getWasmType(field.dataType))
+                const block: binaryen.ExpressionRef[] = []
+
+                const memoryOffset = this.module.global.get('_memoryOffset', binaryen.i32)
+                const structPointer = this.module.local.tee(wasmParams.length, memoryOffset, binaryen.i32)
+
+                let offset = 0
+                for (let i = 0; i < wasmParams.length; i++) {
+                    const param = this.module.local.get(i, wasmParams[i])
+                    block.push(this.module.i32.store(offset, 4, structPointer, param))
+                    offset += 4
+                }
+                // Update the memory offset in the WebAssembly module
+                block.push(this.module.global.set('_memoryOffset', this.module.i32.add(memoryOffset, this.module.i32.const(size))))
+                block.push(this.module.return(this.module.local.get(wasmParams.length, binaryen.i32)))
+
+                this.module.addFunction(
+                    functionName,
+                    binaryen.createType(wasmParams),
+                    binaryen.i32,
+                    [binaryen.i32],
+                    this.module.block(null, block, binaryen.i32)
+                )
             }
         }
     }
@@ -106,6 +149,9 @@ export class CodeGenerator {
     private visitProgram(program: Program): binaryen.ExpressionRef[] {
         const statements: binaryen.ExportRef[] = []
         for (const statement of program.statements) {
+            if (statement.type === AstType.StructDeclaration) {
+                continue
+            }
             if (statement.type !== AstType.FuncStatement) {
                 throw new Error(`Invalid statement outside of function at line ${statement.location.start.line}`)
             }
@@ -163,7 +209,7 @@ export class CodeGenerator {
         const finalType = dataType || inferredType
         
         const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.define(name, finalType, index, 'declaration')
+        this.symbolTable.define({ type: SymbolType.Variable, name, dataType: finalType, index, reason: 'declaration' } as VariableSymbol)
         
         return this.module.local.set(index, initExpr)
     }
@@ -177,7 +223,7 @@ export class CodeGenerator {
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            this.symbolTable.define(param.name.value, param.dataType, index, 'parameter')
+            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index, reason: 'parameter' } as VariableSymbol)
         }
 
         // handle return type
@@ -299,13 +345,27 @@ export class CodeGenerator {
         const name = expression.callee.value
 
         // Check if the function is declared in the symbol table
-        const functionInfo = this.symbolTable.getFunction(name)
-        if (!functionInfo) {
-            throw new Error(`Undefined function: ${name}`)
+        const symbol = this.symbolTable.getFunction(name)
+        if (!symbol) {
+            throw new Error(`Undefined call expression: ${name}`)
         }
 
-        const args = expression.arguments.map(arg => this.visitExpression(arg))
-        return this.module.call(name, args, getWasmType(functionInfo.returnType))
+        switch (symbol.type) {
+            case SymbolType.Function: {
+                const functionInfo = symbol as FunctionSymbol
+                const args = expression.arguments.map(arg => this.visitExpression(arg))
+                return this.module.call(name, args, getWasmType(functionInfo.returnType))
+            }
+            case SymbolType.Struct: {
+                const structSymbol = symbol as StructSymbol
+                const args = expression.arguments.map(arg => this.visitExpression(arg))
+                this.memoryOffset += structSymbol.size
+                return this.module.call(`__newStruct_${structSymbol.name}`, args, binaryen.i32)
+            }
+            default:
+                throw new Error('Placeholder')
+        }
+
     }
     
     
