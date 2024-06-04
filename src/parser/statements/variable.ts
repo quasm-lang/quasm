@@ -1,4 +1,4 @@
-import { Parser } from '../parser.ts'
+import { Parser } from '../mod.ts'
 import { TokenType, DataType } from '../../lexer/token.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseExpression } from '../expressions/mod.ts'

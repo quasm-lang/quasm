@@ -1,4 +1,4 @@
-import { Parser } from '../parser.ts'
+import { Parser } from '../mod.ts'
 import { AstType, BlockStatement, IfStatement, WhileStatement } from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { parseExpression } from '../expressions/mod.ts'
