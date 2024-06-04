@@ -1,5 +1,5 @@
 import { AstType, BinaryExpression, CallExpression, Expression, Field, Identifier, UnaryExpression } from '../ast.ts'
-import { Parser } from '../parser.ts'
+import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { parseFloatLiteral, parseIdentifier, parseIntegerLiteral, parseStringLiteral } from './core.ts'
 
