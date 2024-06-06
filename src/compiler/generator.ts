@@ -21,7 +21,8 @@ import {
     WhileStatement,
     IfStatement,
     BlockStatement,
-    StructDeclaration
+    StructDeclaration,
+    MemberAccessExpression
 } from '../parser/ast.ts'
 import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
@@ -186,30 +187,24 @@ export class CodeGenerator {
     }    
 
     private visitLetStatement(statement: LetStatement): binaryen.ExpressionRef {
-        const name = statement.spec.name.value
-        const dataType = statement.spec.dataType
-        const value = statement.spec.value
-        
-        if (dataType === undefined && value === undefined) {
-            throw new Error(`Illegal let declaration!`)
-        }
+        const { value } = statement.spec
         
         let initExpr: binaryen.ExpressionRef
-        let inferredType: DataType | undefined
+        // let inferredType: DataType | undefined
 
         if (value) {
             initExpr = this.visitExpression(value)
-            inferredType = this.inferDataType(value)
+            // inferredType = this.inferDataType(value)
         } else {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
-            inferredType = DataType.i32
+            // inferredType = DataType.i32
         }
 
         // finalize the data type
-        const finalType = dataType || inferredType
+        // const finalType = dataType || inferredType
         
-        const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.define({ type: SymbolType.Variable, name, dataType: finalType, index, reason: 'declaration' } as VariableSymbol)
+        // const index = this.symbolTable.currentScopeLastIndex()
+        const index = this.semanticAnalyzer.visitLetStatement(statement)
         
         return this.module.local.set(index, initExpr)
     }
@@ -242,7 +237,6 @@ export class CodeGenerator {
                         vars.push(getWasmType((value as VariableSymbol).dataType))
                     }
             }
-            
         }
         
         const wasmFunc = this.module.addFunction(
@@ -335,6 +329,8 @@ export class CodeGenerator {
                     return this.visitIdentifier(expression as Identifier)
             case AstType.CallExpression:
                 return this.visitCallExpression(expression as CallExpression)
+            case AstType.MemberAccessExpression:
+                return this.memberAccessExpression(expression as MemberAccessExpression)
             // Add cases for other expression types as needed
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
@@ -367,7 +363,26 @@ export class CodeGenerator {
         }
 
     }
-    
+
+    private memberAccessExpression(expression: MemberAccessExpression): binaryen.ExpressionRef {
+        const symbol = this.symbolTable.lookup((expression.base as Identifier).value)
+        const structName = (symbol as VariableSymbol).instanceOf
+        const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
+        const memberIndex = Array.from(structSymbol.members.keys()).indexOf(expression.member.value)
+
+        if (memberIndex === -1) {
+            throw new Error(`Member '${expression.member.value}' not found in struct '${structSymbol.name}'`)
+        }
+
+        const offset = memberIndex * 4 // Assuming each member is 4 bytes (i32)
+
+        const structPointer = this.visitExpression(expression.base)
+        const memberPointer = this.module.i32.add(structPointer, this.module.i32.const(offset))
+
+        
+        const memberType = structSymbol.members.get(expression.member.value)!
+        return this.module.i32.load(offset, 4, structPointer)
+    }
     
     private visitUnaryExpression(expression: UnaryExpression): binaryen.ExpressionRef {
         const right = this.visitExpression(expression.right)

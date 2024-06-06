@@ -6,7 +6,8 @@ const dataTypeToWasmTypeMap: Record<DataType, binaryen.Type> = {
     i64: binaryen.i64,
     f32: binaryen.f32,
     f64: binaryen.f64,
-    none: binaryen.none
+    none: binaryen.none,
+    struct: binaryen.i32
 }
 
 export function getWasmType(type: DataType): binaryen.Type {

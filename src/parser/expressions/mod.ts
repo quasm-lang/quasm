@@ -1,10 +1,12 @@
-import { AstType, BinaryExpression, CallExpression, Expression, Field, Identifier, UnaryExpression } from '../ast.ts'
+import { AstType, BinaryExpression, CallExpression, Expression, Field, Identifier, MemberAccessExpression, UnaryExpression } from '../ast.ts'
 import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { parseFloatLiteral, parseIdentifier, parseIntegerLiteral, parseStringLiteral } from './core.ts'
 
 function getPrecedence(type: TokenType): number {
     switch (type) {
+        case TokenType.Dot:
+            return 5
         case TokenType.Asterisk:
         case TokenType.Slash:
             return 4
@@ -76,6 +78,16 @@ export function parseInfixExpression(parser: Parser, left: Expression): Expressi
         }
         case TokenType.LeftParen:
             return parseCallExpression(parser, left as Identifier)
+        case TokenType.Dot: {
+            parser.match(TokenType.Dot)
+            const member = parseIdentifier(parser)
+            return {
+                type: AstType.MemberAccessExpression,
+                base: left,
+                member,
+                location: parser.getLocation()
+            } as MemberAccessExpression
+        }   
         default:
             return left
     }

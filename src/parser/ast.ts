@@ -20,6 +20,7 @@ export enum AstType {
     CallExpression = 'CALL_EXPRESSION',
     UnaryExpression = 'UNARY_EXPRESSION',
     BinaryExpression = 'BINARY_EXPRESSION',
+    MemberAccessExpression = 'MEMBER_ACCESS_EXPRESSION',
     Identifier = 'IDENTIFIER',
     IntegerLiteral = 'INTEGER_LITERAL',
     FloatLiteral = 'FLOAT_LITERAL',
@@ -125,6 +126,12 @@ export interface BinaryExpression extends Expression {
     left: Expression
     operator: InfixOperator
     right: Expression
+}
+
+export interface MemberAccessExpression extends Expression {
+    type: AstType.MemberAccessExpression
+    base: Expression
+    member: Identifier
 }
 
 export interface Field extends Node {

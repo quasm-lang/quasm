@@ -14,6 +14,7 @@ export interface Symbol {
 export interface VariableSymbol extends Symbol {
     type: SymbolType.Variable
     dataType: DataType
+    instanceOf?: string
     index: number
     reason: 'declaration' | 'parameter'
 }

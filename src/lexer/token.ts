@@ -114,7 +114,8 @@ export enum DataType {
     i64 = 'i64',
     f32 = 'f32',
     f64 = 'f64',
-    none = 'none'
+    none = 'none',
+    struct = 'struct'
 }
 export type DataTypeToken = Token & {
     type: TokenType.Type
@@ -130,4 +131,5 @@ export type InfixOperator =
     TokenType.LessThan |
     TokenType.Equality |
     TokenType.GreaterThanOrEqual |
-    TokenType.LessThanOrEqual
+    TokenType.LessThanOrEqual |
+    TokenType.Dot
