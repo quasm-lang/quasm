@@ -21,23 +21,23 @@ export class CodeGenerator {
         this.semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
         
         this.module.addFunctionImport(
-            'print',
+            '__print_i32',
             'env',
-            'print',
+            '__print_i32',
             binaryen.i32,
             binaryen.none
         )
         
         this.module.addFunctionImport(
-            'printstr',
+            '__printstr',
             'env',
-            'printstr',
+            '__printstr',
             binaryen.createType([binaryen.i32]),
             binaryen.none
         )
         
-        this.symbolTable.addFunction({ type: SymbolType.Function, name: 'print', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
-        this.symbolTable.addFunction({ type: SymbolType.Function, name: 'printstr', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
+        // this.symbolTable.addFunction({ type: SymbolType.Function, name: 'print', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
+        // this.symbolTable.addFunction({ type: SymbolType.Function, name: 'printstr', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
     }
     
     public visit(node: Ast.Node) {
@@ -156,6 +156,8 @@ export class CodeGenerator {
                 return this.visitIfStatement(statement as Ast.IfStatement)
             case AstType.WhileStatement:
                 return this.visitWhileStatement(statement as Ast.WhileStatement)
+            case AstType.PrintStatement:
+                return this.visitPrintStatement(statement as Ast.PrintStatement)
             default:
                 throw new Error(`Unhandled statement type: ${statement.type}`)
         }
@@ -309,6 +311,12 @@ export class CodeGenerator {
         ]))
 
         return this.module.block("while", [loopBlock], binaryen.none)
+    }
+
+    private visitPrintStatement(statement: Ast.PrintStatement): binaryen.ExpressionRef {
+        const dataType = this.semanticAnalyzer.visitExpression(statement.expression) // TODO: call specific print function based on data type
+        const val = this.visitExpression(statement.expression)
+        return this.module.call('__print_i32', [val], binaryen.none)
     }
 
     private visitExpressionStatement(statement: Ast.ExpressionStatement): binaryen.ExpressionRef {

@@ -2,6 +2,7 @@ import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
+import { parseExpression } from "../expressions/mod.ts";
 
 export { parseIfStatement, parseWhileStatement } from './controlFlow.ts'
 export { parseFuncStatement, parseReturnStatement } from './function.ts'
@@ -41,6 +42,18 @@ export function parseBlockStatement(parser: Parser): Ast.BlockStatement {
     return {
         type: AstType.BlockStatement,
         statements,
+        location: parser.getLocation()
+    }
+}
+
+export function parsePrintStatement(parser: Parser): Ast.PrintStatement {
+    parser.match(TokenType.Print)
+    const expression = parseExpression(parser)
+    parser.match(TokenType.Semicolon)
+
+    return {
+        type: AstType.PrintStatement,
+        expression,
         location: parser.getLocation()
     }
 }

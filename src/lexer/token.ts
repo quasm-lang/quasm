@@ -45,6 +45,7 @@ export enum TokenType {
     Global = 'global',
     Import = 'import',
     From = 'from',
+    Print = 'print',
     
     NewLine = 'new line',
     EOF = 'eof'
@@ -105,7 +106,8 @@ export const keywords: Record<string, TokenType> = {
     'export': TokenType.Export,
     'global': TokenType.Global,
     'import': TokenType.Import,
-    'from': TokenType.From
+    'from': TokenType.From,
+    'print': TokenType.Print
 }
 
 // Datatypes

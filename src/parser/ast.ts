@@ -15,6 +15,7 @@ export enum AstType {
     StructDeclaration = 'STRUCT_DECLARATION',
     IfStatement = 'IF_STATEMENT',
     WhileStatement = 'WHILE_STATEMENT',
+    PrintStatement = 'PRINT_STATEMENT',
     PrefixExpression = 'PREFIX_EXPRESSION',
     InfixExpression = 'INFIX_EXPRESSION',
     CallExpression = 'CALL_EXPRESSION',
@@ -106,6 +107,11 @@ export interface WhileStatement extends Statement {
     type: AstType.WhileStatement
     condition: Expression
     body: BlockStatement
+}
+
+export interface PrintStatement extends Statement {
+    type: AstType.PrintStatement
+    expression: Expression
 }
 
 // Expressions

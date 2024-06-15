@@ -17,7 +17,8 @@ import {
     parseExpressionStatement,
     parseStructStatement,
     parseWhileStatement,
-    parseIfStatement
+    parseIfStatement,
+    parsePrintStatement
 } from './statements/mod.ts'
 import { parseExpression } from "./expressions/mod.ts";
 
@@ -129,6 +130,8 @@ export class Parser {
             return parseIfStatement(this)
         } else if (this.eq(TokenType.While)) {
             return parseWhileStatement(this)
+        } else if (this.eq(TokenType.Print)) {
+            return parsePrintStatement(this)
         } else {
             const expr = parseExpression(this)
             if (this.eq(TokenType.Assignment)) {
