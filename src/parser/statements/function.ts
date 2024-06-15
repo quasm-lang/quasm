@@ -1,11 +1,12 @@
 import { Parser } from '../mod.ts'
-import { AstType, FuncStatement, ReturnStatement } from '../ast.ts'
+import { AstType } from '../ast.ts'
+import * as Ast from '../ast.ts'
 import { DataType, TokenType } from '../../lexer/token.ts'
 import { parseExpression, parseFields } from '../expressions/mod.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseBlockStatement } from './mod.ts'
 
-export function parseFuncStatement(parser: Parser): FuncStatement {
+export function parseFuncStatement(parser: Parser): Ast.FuncStatement {
     parser.match(TokenType.Func)
     const name = parseIdentifier(parser)
     parser.match(TokenType.LeftParen)
@@ -32,7 +33,7 @@ export function parseFuncStatement(parser: Parser): FuncStatement {
     }
 }
 
-export function parseReturnStatement(parser: Parser): ReturnStatement {
+export function parseReturnStatement(parser: Parser): Ast.ReturnStatement {
     parser.match(TokenType.Return)
     const value = parseExpression(parser)
     parser.match(TokenType.Semicolon)

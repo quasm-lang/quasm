@@ -1,29 +1,8 @@
 import { binaryen } from '../deps.ts'
 
-import {
-    Node,
-    AstType,
-    Program,
-    Statement,
-    Expression,
-    LetStatement,
-    FuncStatement,
-    ReturnStatement,
-    ExpressionStatement,
-    BinaryExpression,
-    CallExpression,
-    IntegerLiteral,
-    Identifier,
-    StringLiteral,
-    AssignmentStatement,
-    UnaryExpression,
-    FloatLiteral,
-    WhileStatement,
-    IfStatement,
-    BlockStatement,
-    StructDeclaration,
-    MemberAccessExpression
-} from '../parser/ast.ts'
+import { AstType } from '../parser/ast.ts'
+import * as Ast from '../parser/ast.ts'
+
 import { TokenType, DataType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
 import { FunctionSymbol, StructSymbol, SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
@@ -61,7 +40,7 @@ export class CodeGenerator {
         this.symbolTable.addFunction({ type: SymbolType.Function, name: 'printstr', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
     }
     
-    public visit(node: Node) {
+    public visit(node: Ast.Node) {
         if (node.type !== AstType.Program) 
             throw new Error(`Not valid program: ${node.type}`)
 
@@ -70,14 +49,14 @@ export class CodeGenerator {
             this.module.addGlobal('_memoryOffset', binaryen.i32, true, this.module.i32.const(0))
 
             // First pass: Collect function and struct declarations
-            this.collectFirstPass(node as Program)
+            this.collectFirstPass(node as Ast.Program)
 
             // Second pass: Semantic Analyzer
             const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
-            semanticAnalyzer.check(node as Program)
+            semanticAnalyzer.check(node as Ast.Program)
             
             // Third pass: Generate WebAssembly code
-            const _program = this.visitProgram(node as Program)
+            const _program = this.visitProgram(node as Ast.Program)
             // console.log(_program)
         } catch (err) {
             const error = err as Error
@@ -94,10 +73,10 @@ export class CodeGenerator {
         return this.module
     }
 
-    private collectFirstPass(program: Program) {
+    private collectFirstPass(program: Ast.Program) {
         for (const statement of program.statements) {
             if (statement.type === AstType.FuncStatement) {
-                const func = statement as FuncStatement
+                const func = statement as Ast.FuncStatement
                 const name = func.name.value
                 const params = func.parameters.map(param => param.dataType)
                 const returnType = func.returnType
@@ -105,7 +84,7 @@ export class CodeGenerator {
                 // Add the function information to the symbol table
                 this.symbolTable.addFunction({ type: SymbolType.Function, name, params, returnType } as FunctionSymbol)
             } else if (statement.type === AstType.StructDeclaration) {
-                const struct = statement as StructDeclaration
+                const struct = statement as Ast.StructDeclaration
                 const name = struct.name.value
                 const members = new Map<string, DataType>()
 
@@ -147,7 +126,7 @@ export class CodeGenerator {
         }
     }
 
-    private visitProgram(program: Program): binaryen.ExpressionRef[] {
+    private visitProgram(program: Ast.Program): binaryen.ExpressionRef[] {
         const statements: binaryen.ExportRef[] = []
         for (const statement of program.statements) {
             if (statement.type === AstType.StructDeclaration) {
@@ -161,32 +140,32 @@ export class CodeGenerator {
         return statements
     }
 
-    private visitStatement(statement: Statement): binaryen.ExpressionRef {
+    private visitStatement(statement: Ast.Statement): binaryen.ExpressionRef {
         switch (statement.type) {
             case AstType.ExpressionStatement:
-                return this.visitExpressionStatement(statement as ExpressionStatement)
+                return this.visitExpressionStatement(statement as Ast.ExpressionStatement)
             case AstType.LetStatement:
-                return this.visitLetStatement(statement as LetStatement)
+                return this.visitLetStatement(statement as Ast.LetStatement)
             case AstType.FuncStatement:
-                return this.visitFnStatement(statement as FuncStatement)
+                return this.visitFnStatement(statement as Ast.FuncStatement)
             case AstType.ReturnStatement:
-                return this.visitReturnStatement(statement as ReturnStatement)
+                return this.visitReturnStatement(statement as Ast.ReturnStatement)
             case AstType.AssignmentStatement:
-                return this.visitAssignmentStatement(statement as AssignmentStatement)
+                return this.visitAssignmentStatement(statement as Ast.AssignmentStatement)
             case AstType.IfStatement:
-                return this.visitIfStatement(statement as IfStatement)
+                return this.visitIfStatement(statement as Ast.IfStatement)
             case AstType.WhileStatement:
-                return this.visitWhileStatement(statement as WhileStatement)
+                return this.visitWhileStatement(statement as Ast.WhileStatement)
             default:
                 throw new Error(`Unhandled statement type: ${statement.type}`)
         }
     }
 
-    private inferDataType(expression: Expression): DataType {
-        return this.semanticAnalyzer.visitExpression(expression)
-    }    
+    // private inferDataType(expression: Ast.Expression): DataType {
+    //     return this.semanticAnalyzer.visitExpression(expression)
+    // }    
 
-    private visitLetStatement(statement: LetStatement): binaryen.ExpressionRef {
+    private visitLetStatement(statement: Ast.LetStatement): binaryen.ExpressionRef {
         const { value } = statement.spec
         
         let initExpr: binaryen.ExpressionRef
@@ -209,7 +188,7 @@ export class CodeGenerator {
         return this.module.local.set(index, initExpr)
     }
 
-    private visitFnStatement(func: FuncStatement): binaryen.ExpressionRef {
+    private visitFnStatement(func: Ast.FuncStatement): binaryen.ExpressionRef {
         const name = func.name.value
 
         // handle parameters
@@ -257,14 +236,14 @@ export class CodeGenerator {
         return wasmFunc
     }
 
-    private visitReturnStatement(statement: ReturnStatement): binaryen.ExpressionRef {
+    private visitReturnStatement(statement: Ast.ReturnStatement): binaryen.ExpressionRef {
         return this.module.return(this.visitExpression(statement.value))
     }
 
-    private visitAssignmentStatement(statement: AssignmentStatement): binaryen.ExpressionRef {
+    private visitAssignmentStatement(statement: Ast.AssignmentStatement): binaryen.ExpressionRef {
         switch (statement.left.type) {
             case AstType.Identifier: {
-                const name = (statement.left as Identifier).value
+                const name = (statement.left as Ast.Identifier).value
                 const value = this.visitExpression(statement.value)
         
                 // Find the identifier in the current scope stack
@@ -277,11 +256,11 @@ export class CodeGenerator {
                 return this.module.local.set(variable.index, value)
             }
             case AstType.MemberAccessExpression: {
-                const memberAccess = statement.left as MemberAccessExpression
+                const memberAccess = statement.left as Ast.MemberAccessExpression
                 const structPointer = this.visitExpression(memberAccess.base)
                 const value = this.visitExpression(statement.value)
 
-                const symbol = this.symbolTable.lookup((memberAccess.base as Identifier).value)
+                const symbol = this.symbolTable.lookup((memberAccess.base as Ast.Identifier).value)
                 const structName = (symbol as VariableSymbol).instanceOf
                 const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
                 const memberIndex = Array.from(structSymbol.members.keys()).indexOf(memberAccess.member.value)
@@ -299,14 +278,14 @@ export class CodeGenerator {
         }
     }
 
-    private visitIfStatement(statement: IfStatement): binaryen.ExpressionRef {
+    private visitIfStatement(statement: Ast.IfStatement): binaryen.ExpressionRef {
         const condition = this.visitExpression(statement.condition)
         const consequent = statement.consequent.statements.map(statement => this.visitStatement(statement))
 
         // TODO: possibly nest the if blocks to achieve if-else blocks
         let alternate: binaryen.ExpressionRef[] = []
         if (statement.alternate) {
-            alternate = (statement.alternate as BlockStatement).statements.map(statement => this.visitStatement(statement))
+            alternate = (statement.alternate as Ast.BlockStatement).statements.map(statement => this.visitStatement(statement))
         }
 
         return this.module.if(
@@ -316,7 +295,7 @@ export class CodeGenerator {
         )
     }
 
-    private visitWhileStatement(statement: WhileStatement): binaryen.ExpressionRef {
+    private visitWhileStatement(statement: Ast.WhileStatement): binaryen.ExpressionRef {
         const condition = this.visitExpression(statement.condition)
         const body = statement.body.statements.map(statement => this.visitStatement(statement))
         
@@ -332,36 +311,36 @@ export class CodeGenerator {
         return this.module.block("while", [loopBlock], binaryen.none)
     }
 
-    private visitExpressionStatement(statement: ExpressionStatement): binaryen.ExpressionRef {
+    private visitExpressionStatement(statement: Ast.ExpressionStatement): binaryen.ExpressionRef {
         const expression = this.visitExpression(statement.expression)
         return expression
     }
     
-    private visitExpression(expression: Expression): binaryen.ExpressionRef {
+    private visitExpression(expression: Ast.Expression): binaryen.ExpressionRef {
         switch (expression.type) {
             case AstType.UnaryExpression:
-                return this.visitUnaryExpression(expression as UnaryExpression)
+                return this.visitUnaryExpression(expression as Ast.UnaryExpression)
             case AstType.BinaryExpression:
-                return this.visitBinaryExpression(expression as BinaryExpression)
+                return this.visitBinaryExpression(expression as Ast.BinaryExpression)
             case AstType.IntegerLiteral:
-                return this.visitNumerical(expression as IntegerLiteral)
+                return this.visitNumerical(expression as Ast.IntegerLiteral)
             case AstType.FloatLiteral:
-                return this.visitNumerical(expression as FloatLiteral)
+                return this.visitNumerical(expression as Ast.FloatLiteral)
             case AstType.StringLiteral:
-                return this.visitStringLiteral(expression as StringLiteral)
+                return this.visitStringLiteral(expression as Ast.StringLiteral)
             case AstType.Identifier:
-                    return this.visitIdentifier(expression as Identifier)
+                    return this.visitIdentifier(expression as Ast.Identifier)
             case AstType.CallExpression:
-                return this.visitCallExpression(expression as CallExpression)
+                return this.visitCallExpression(expression as Ast.CallExpression)
             case AstType.MemberAccessExpression:
-                return this.visitMemberAccessExpression(expression as MemberAccessExpression)
+                return this.visitMemberAccessExpression(expression as Ast.MemberAccessExpression)
             // Add cases for other expression types as needed
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
         }
     }
 
-    private visitCallExpression(expression: CallExpression): binaryen.ExpressionRef {
+    private visitCallExpression(expression: Ast.CallExpression): binaryen.ExpressionRef {
         const name = expression.callee.value
 
         // Check if the function is declared in the symbol table
@@ -388,8 +367,8 @@ export class CodeGenerator {
 
     }
 
-    private visitMemberAccessExpression(expression: MemberAccessExpression): binaryen.ExpressionRef {
-        const symbol = this.symbolTable.lookup((expression.base as Identifier).value)
+    private visitMemberAccessExpression(expression: Ast.MemberAccessExpression): binaryen.ExpressionRef {
+        const symbol = this.symbolTable.lookup((expression.base as Ast.Identifier).value)
         const structName = (symbol as VariableSymbol).instanceOf
         const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
         const memberIndex = Array.from(structSymbol.members.keys()).indexOf(expression.member.value)
@@ -408,7 +387,7 @@ export class CodeGenerator {
         return this.module.i32.load(offset, 4, structPointer)
     }
     
-    private visitUnaryExpression(expression: UnaryExpression): binaryen.ExpressionRef {
+    private visitUnaryExpression(expression: Ast.UnaryExpression): binaryen.ExpressionRef {
         const right = this.visitExpression(expression.right)
         
         switch (expression.operator) {
@@ -419,7 +398,7 @@ export class CodeGenerator {
         }
     }
     
-    private visitBinaryExpression(node: BinaryExpression): binaryen.ExpressionRef {
+    private visitBinaryExpression(node: Ast.BinaryExpression): binaryen.ExpressionRef {
         const left = this.visitExpression(node.left)
         const right = this.visitExpression(node.right)
 
@@ -466,14 +445,14 @@ export class CodeGenerator {
         }
     }
     
-    private visitNumerical(node: IntegerLiteral | FloatLiteral): binaryen.ExpressionRef {
+    private visitNumerical(node: Ast.IntegerLiteral | Ast.FloatLiteral): binaryen.ExpressionRef {
         if (node.type === AstType.FloatLiteral) 
             return this.module.f32.const(node.value)
         return this.module.i32.const(node.value)
     }
 
     // Returns initial pointer of string
-    private visitStringLiteral(node: StringLiteral): binaryen.ExpressionRef {
+    private visitStringLiteral(node: Ast.StringLiteral): binaryen.ExpressionRef {
         const encodedString = new TextEncoder().encode(node.value + '\0') // includes the null terminator
         const stringPointer = this.module.i32.const(this.memoryOffset)
 
@@ -490,7 +469,7 @@ export class CodeGenerator {
     }
     
 
-    private visitIdentifier(identifier: Identifier): binaryen.ExpressionRef {
+    private visitIdentifier(identifier: Ast.Identifier): binaryen.ExpressionRef {
         const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
         if (variable === undefined) {
             throw new Error(`Variable ${identifier.value} not found in scope`)

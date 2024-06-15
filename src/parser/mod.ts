@@ -6,15 +6,8 @@ import {
 
 import { Lexer } from '../lexer/mod.ts'
 
-import {
-    Program,
-    Statement,
-    FuncStatement,
-    Field,
-    SourceLocation,
-    AstType
-} from './ast.ts'
-import { parseIdentifier} from './expressions/core.ts'
+import { AstType } from './ast.ts'
+import * as Ast from './ast.ts'
 
 import {
     parseFuncStatement,
@@ -88,7 +81,7 @@ export class Parser {
         throw new Error(`Parser error: Expected a data type, but got '${this.curToken.type}'`)
     }
 
-    getLocation(): SourceLocation {
+    getLocation(): Ast.SourceLocation {
         return {
             start: {
                 column: this.curToken.column,
@@ -101,8 +94,8 @@ export class Parser {
         }
     }
 
-    parseProgram(): Program {
-        const statements: Statement[] = []
+    parseProgram(): Ast.Program {
+        const statements: Ast.Statement[] = []
         try {
             while (!this.eof()) {
                 const statement = this.parseStatement()
@@ -121,7 +114,7 @@ export class Parser {
         }
     }
 
-    parseStatement(): Statement {
+    parseStatement(): Ast.Statement {
         if (this.eq(TokenType.Export)) {
             return this.parseExport()
         } else if (this.eq(TokenType.Func)) {
@@ -147,7 +140,7 @@ export class Parser {
     }
 
     // Misc
-    parseExport(): FuncStatement {
+    parseExport(): Ast.FuncStatement {
         this.match(TokenType.Export)
         
         if (this.eq(TokenType.Func)) {

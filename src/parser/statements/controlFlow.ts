@@ -1,10 +1,11 @@
 import { Parser } from '../mod.ts'
-import { AstType, BlockStatement, IfStatement, WhileStatement } from '../ast.ts'
+import { AstType } from '../ast.ts'
+import * as Ast from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { parseExpression } from '../expressions/mod.ts'
 import { parseBlockStatement } from './mod.ts' 
 
-export function parseWhileStatement(parser: Parser): WhileStatement {
+export function parseWhileStatement(parser: Parser): Ast.WhileStatement {
     parser.match(TokenType.While)
     const condition = parseExpression(parser)
     const body = parseBlockStatement(parser)
@@ -17,12 +18,12 @@ export function parseWhileStatement(parser: Parser): WhileStatement {
     }
 }
 
-export function parseIfStatement(parser: Parser): IfStatement {
+export function parseIfStatement(parser: Parser): Ast.IfStatement {
     parser.match(TokenType.If)
     const condition = parseExpression(parser)
     const consequent = parseBlockStatement(parser)
 
-    let alternate: BlockStatement | undefined
+    let alternate: Ast.BlockStatement | undefined
     if (parser.eq(TokenType.Else)) {
         parser.match(TokenType.Else)
         

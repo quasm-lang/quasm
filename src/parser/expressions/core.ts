@@ -1,15 +1,10 @@
 import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
-import {
-    IntegerLiteral,
-    AstType,
-    StringLiteral,
-    FloatLiteral,
-    Identifier,
-} from '../ast.ts'
+import { AstType } from '../ast.ts'
+import * as Ast from '../ast.ts'
 
 
-export function parseIntegerLiteral(parser: Parser): IntegerLiteral {
+export function parseIntegerLiteral(parser: Parser): Ast.IntegerLiteral {
     return {
         type: AstType.IntegerLiteral,
         value: parseInt(parser.consume().literal),
@@ -17,7 +12,7 @@ export function parseIntegerLiteral(parser: Parser): IntegerLiteral {
     }
 }
 
-export function parseFloatLiteral(parser: Parser): FloatLiteral {
+export function parseFloatLiteral(parser: Parser): Ast.FloatLiteral {
     return {
         type: AstType.FloatLiteral,
         value: parseFloat(parser.consume().literal),
@@ -25,7 +20,7 @@ export function parseFloatLiteral(parser: Parser): FloatLiteral {
     }
 }
 
-export function parseStringLiteral(parser: Parser): StringLiteral {
+export function parseStringLiteral(parser: Parser): Ast.StringLiteral {
     return {
         type: AstType.StringLiteral,
         value: parser.consume().literal,
@@ -33,7 +28,7 @@ export function parseStringLiteral(parser: Parser): StringLiteral {
     }
 }
 
-export function parseIdentifier(parser: Parser): Identifier {
+export function parseIdentifier(parser: Parser): Ast.Identifier {
     return {
         type: AstType.Identifier,
         value: parser.match(TokenType.Identifier).literal,

@@ -1,22 +1,5 @@
-import {
-    AstType,
-    Program,
-    Statement,
-    Expression,
-    BinaryExpression,
-    LetStatement,
-    FuncStatement,
-    ReturnStatement,
-    Identifier,
-    IntegerLiteral,
-    AssignmentStatement,
-    CallExpression,
-    FloatLiteral,
-    StringLiteral,
-    UnaryExpression,
-    ExpressionStatement,
-    MemberAccessExpression,
-} from '../parser/ast.ts'
+import { AstType } from '../parser/ast.ts'
+import * as Ast from '../parser/ast.ts'
 import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, StructSymbol } from './symbolTable.ts'
 import { DataType, TokenType } from '../lexer/token.ts'
 
@@ -27,11 +10,11 @@ export class SemanticAnalyzer {
         this.symbolTable = symbolTable
     }
 
-    check(ast: Program) {
+    check(ast: Ast.Program) {
         this.visitProgram(ast)
     }
 
-    visitProgram(program: Program) {
+    visitProgram(program: Ast.Program) {
         this.symbolTable.enterScope()
         
         for (const statement of program.statements) {
@@ -41,27 +24,27 @@ export class SemanticAnalyzer {
         this.symbolTable.exitScope()
     }
 
-    visitStatement(statement: Statement) {
+    visitStatement(statement: Ast.Statement) {
         switch (statement.type) {
             case AstType.LetStatement:
-                this.visitLetStatement(statement as LetStatement)
+                this.visitLetStatement(statement as Ast.LetStatement)
                 break
             case AstType.FuncStatement:
-                this.visitFnStatement(statement as FuncStatement)
+                this.visitFnStatement(statement as Ast.FuncStatement)
                 break
             case AstType.ReturnStatement:
-                this.visitReturnStatement(statement as ReturnStatement)
+                this.visitReturnStatement(statement as Ast.ReturnStatement)
                 break
             case AstType.AssignmentStatement:
-                this.visitAssignmentStatement(statement as AssignmentStatement)
+                this.visitAssignmentStatement(statement as Ast.AssignmentStatement)
                 break
             case AstType.ExpressionStatement:
-                this.visitExpressionStatement(statement as ExpressionStatement)
+                this.visitExpressionStatement(statement as Ast.ExpressionStatement)
                 break
         }
     }
 
-    visitLetStatement(statement: LetStatement): number {
+    visitLetStatement(statement: Ast.LetStatement): number {
         const { name, dataType, value } = statement.spec
 
         if (dataType === undefined && value === undefined) {
@@ -82,7 +65,7 @@ export class SemanticAnalyzer {
 
         let instanceOf: string | undefined
         if (statement.spec.value && statement.spec.value.type === AstType.CallExpression) {
-            const stmt = statement.spec.value as CallExpression
+            const stmt = statement.spec.value as Ast.CallExpression
             const symbol = this.symbolTable.getFunction(stmt.callee.value)
             if (symbol?.type === SymbolType.Struct) {
                 instanceOf = (symbol as StructSymbol).name
@@ -95,7 +78,7 @@ export class SemanticAnalyzer {
         return index
     }
 
-    visitFnStatement(statement: FuncStatement) {
+    visitFnStatement(statement: Ast.FuncStatement) {
         const { name, parameters, returnType, body } = statement
     
         // Create a new scope for the function
@@ -126,16 +109,16 @@ export class SemanticAnalyzer {
         this.symbolTable.exitScope()
     }
 
-    visitReturnStatement(statement: ReturnStatement) {
+    visitReturnStatement(statement: Ast.ReturnStatement) {
         this.visitExpression(statement.value)
     }
 
-    visitAssignmentStatement(statement: AssignmentStatement) {
+    visitAssignmentStatement(statement: Ast.AssignmentStatement) {
         const { left, value } = statement
 
         switch (left.type) {
             case AstType.Identifier: {
-                const left_ = left as Identifier
+                const left_ = left as Ast.Identifier
                 const variableType = (this.symbolTable.lookup(left_.value) as VariableSymbol)?.dataType
                 const valueType = this.visitExpression(value)
         
@@ -156,34 +139,34 @@ export class SemanticAnalyzer {
 
     }
 
-    visitExpressionStatement(statement: ExpressionStatement) {
+    visitExpressionStatement(statement: Ast.ExpressionStatement) {
         this.visitExpression(statement.expression)
     }
 
-    visitExpression(expression: Expression): DataType {
+    visitExpression(expression: Ast.Expression): DataType {
         switch (expression.type) {
             case AstType.Identifier:
-                return this.visitIdentifier(expression as Identifier)
+                return this.visitIdentifier(expression as Ast.Identifier)
             case AstType.IntegerLiteral:
-                return this.visitIntegerLiteral(expression as IntegerLiteral)
+                return this.visitIntegerLiteral(expression as Ast.IntegerLiteral)
             case AstType.FloatLiteral:
-                return this.visitFloatLiteral(expression as FloatLiteral)
+                return this.visitFloatLiteral(expression as Ast.FloatLiteral)
             case AstType.StringLiteral:
-                return this.visitStringLiteral(expression as StringLiteral)
+                return this.visitStringLiteral(expression as Ast.StringLiteral)
             case AstType.BinaryExpression:
-                return this.visitBinaryExpression(expression as BinaryExpression)
+                return this.visitBinaryExpression(expression as Ast.BinaryExpression)
             case AstType.UnaryExpression:
-                return this.visitUnaryExpression(expression as UnaryExpression)
+                return this.visitUnaryExpression(expression as Ast.UnaryExpression)
             case AstType.CallExpression:
-                return this.visitCallExpression(expression as CallExpression)
+                return this.visitCallExpression(expression as Ast.CallExpression)
             case AstType.MemberAccessExpression:
-                return this.visitMemberAccessExpression(expression as MemberAccessExpression)
+                return this.visitMemberAccessExpression(expression as Ast.MemberAccessExpression)
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
         }
     }
 
-    visitIdentifier(identifier: Identifier): DataType {
+    visitIdentifier(identifier: Ast.Identifier): DataType {
         const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
@@ -191,19 +174,19 @@ export class SemanticAnalyzer {
         return variable.dataType
     }
 
-    visitIntegerLiteral(_integer: IntegerLiteral): DataType {
+    visitIntegerLiteral(_integer: Ast.IntegerLiteral): DataType {
         return DataType.i32
     }
 
-    visitFloatLiteral(_float: FloatLiteral): DataType {
+    visitFloatLiteral(_float: Ast.FloatLiteral): DataType {
         return DataType.f32
     }
 
-    visitStringLiteral(_str: StringLiteral): DataType {
+    visitStringLiteral(_str: Ast.StringLiteral): DataType {
         return DataType.i32 // Assuming strings are represented as pointers (i32)
     }
 
-    visitBinaryExpression(expression: BinaryExpression): DataType {
+    visitBinaryExpression(expression: Ast.BinaryExpression): DataType {
         const leftType = this.visitExpression(expression.left)
         const rightType = this.visitExpression(expression.right)
     
@@ -214,7 +197,7 @@ export class SemanticAnalyzer {
         return leftType
     }
 
-    visitUnaryExpression(expression: UnaryExpression): DataType {
+    visitUnaryExpression(expression: Ast.UnaryExpression): DataType {
         const rightType = this.visitExpression(expression.right)
 
         if (expression.operator === TokenType.Minus && rightType !== DataType.i32 && rightType !== DataType.f32) {
@@ -224,7 +207,7 @@ export class SemanticAnalyzer {
         return rightType
     }
     
-    visitCallExpression(expression: CallExpression): DataType {
+    visitCallExpression(expression: Ast.CallExpression): DataType {
         const symbol = this.symbolTable.getFunction(expression.callee.value)
 
         if (!symbol) {
@@ -256,7 +239,7 @@ export class SemanticAnalyzer {
         } 
     }
 
-    visitMemberAccessExpression(expression: MemberAccessExpression): DataType {
+    visitMemberAccessExpression(expression: Ast.MemberAccessExpression): DataType {
         const objectType = this.visitExpression(expression.base)
         if (objectType !== DataType.struct) {
             throw new Error('Member access is only allowed on struct instances')
@@ -266,7 +249,7 @@ export class SemanticAnalyzer {
             throw new Error('Should be Identifier')
         }
 
-        const symbol = this.symbolTable.lookup((expression.base as Identifier).value)
+        const symbol = this.symbolTable.lookup((expression.base as Ast.Identifier).value)
 
         if (!symbol) {
             throw new Error('Doesn\'t exist')

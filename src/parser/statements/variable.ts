@@ -2,14 +2,15 @@ import { Parser } from '../mod.ts'
 import { TokenType, DataType } from '../../lexer/token.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseExpression } from '../expressions/mod.ts'
-import { LetStatement, Expression, AstType, Spec, AssignmentStatement, Identifier } from '../ast.ts'
+import { AstType } from '../ast.ts'
+import * as Ast from '../ast.ts'
 
-export function parseLetStatement(parser: Parser): LetStatement {
+export function parseLetStatement(parser: Parser): Ast.LetStatement {
     parser.match(TokenType.Let)
     
     const name = parseIdentifier(parser)
     let dataType: DataType | undefined
-    let value: Expression | undefined
+    let value: Ast.Expression | undefined
 
     if (parser.eq(TokenType.Colon)) { // Type exists
         parser.match(TokenType.Colon)
@@ -34,12 +35,12 @@ export function parseLetStatement(parser: Parser): LetStatement {
             dataType,
             value,
             location: parser.getLocation()
-        } as Spec,
+        } as Ast.Spec,
         location: parser.getLocation()
     }
 }
 
-export function parseAssignmentStatement(parser: Parser, left: Expression): AssignmentStatement {
+export function parseAssignmentStatement(parser: Parser, left: Ast.Expression): Ast.AssignmentStatement {
     // const left = parseExpression(parser)
 
     parser.match(TokenType.Assignment)
