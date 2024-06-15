@@ -26,6 +26,7 @@ import {
     parseWhileStatement,
     parseIfStatement
 } from './statements/mod.ts'
+import { parseExpression } from "./expressions/mod.ts";
 
 export class Parser {
     curToken: Token
@@ -135,10 +136,13 @@ export class Parser {
             return parseIfStatement(this)
         }else if (this.eq(TokenType.While)) {
             return parseWhileStatement(this)
-        } else if (this.peekEq(TokenType.Assignment)) {
-            return parseAssignmentStatement(this)
         } else {
-            return parseExpressionStatement(this)
+            const expr = parseExpression(this)
+            if (this.eq(TokenType.Assignment)) {
+                return parseAssignmentStatement(this, expr)
+            } else {
+                return parseExpressionStatement(this, expr)
+            }
         }
     }
 

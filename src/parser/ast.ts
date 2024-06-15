@@ -85,7 +85,7 @@ export interface ReturnStatement extends Statement {
 
 export interface AssignmentStatement extends Statement {
     type: AstType.AssignmentStatement
-    name: Identifier
+    left: Expression
     value: Expression
 }
 

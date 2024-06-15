@@ -131,17 +131,29 @@ export class SemanticAnalyzer {
     }
 
     visitAssignmentStatement(statement: AssignmentStatement) {
-        const { name, value } = statement
-        const variableType = (this.symbolTable.lookup(name.value) as VariableSymbol)?.dataType
-        const valueType = this.visitExpression(value)
+        const { left, value } = statement
 
-        if (!variableType) {
-            throw new Error(`Undefined variable '${name.value}'`)
+        switch (left.type) {
+            case AstType.Identifier: {
+                const left_ = left as Identifier
+                const variableType = (this.symbolTable.lookup(left_.value) as VariableSymbol)?.dataType
+                const valueType = this.visitExpression(value)
+        
+                if (!variableType) {
+                    throw new Error(`Undefined variable '${left_.value}'`)
+                }
+        
+                if (variableType !== valueType) {
+                    throw new Error(`Type mismatch: Cannot assign value of type ${valueType} to variable '${left_.value}' of type ${variableType}`)
+                }
+                break
+            }
+            case AstType.MemberAccessExpression: {
+                // TODO
+                break
+            }
         }
 
-        if (variableType !== valueType) {
-            throw new Error(`Type mismatch: Cannot assign value of type ${valueType} to variable '${name.value}' of type ${variableType}`)
-        }
     }
 
     visitExpressionStatement(statement: ExpressionStatement) {

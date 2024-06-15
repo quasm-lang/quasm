@@ -39,12 +39,8 @@ export function parseLetStatement(parser: Parser): LetStatement {
     }
 }
 
-export function parseAssignmentStatement(parser: Parser): AssignmentStatement {
-    const name: Identifier = {
-        type: AstType.Identifier,
-        value: parser.match(TokenType.Identifier).literal,
-        location: parser.getLocation()
-    }
+export function parseAssignmentStatement(parser: Parser, left: Expression): AssignmentStatement {
+    // const left = parseExpression(parser)
 
     parser.match(TokenType.Assignment)
     const value = parseExpression(parser)
@@ -52,7 +48,7 @@ export function parseAssignmentStatement(parser: Parser): AssignmentStatement {
 
     return {
         type: AstType.AssignmentStatement,
-        name,
+        left,
         value,
         location: parser.getLocation()
     }

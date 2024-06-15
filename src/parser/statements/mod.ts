@@ -1,15 +1,15 @@
 import { Parser } from '../mod.ts'
 import { parseExpression } from '../expressions/mod.ts'
 import { TokenType } from '../../lexer/token.ts'
-import { AstType, BlockStatement, ExpressionStatement, Statement } from '../ast.ts'
+import { AstType, BlockStatement, Expression, ExpressionStatement, Statement } from '../ast.ts'
 
 export { parseIfStatement, parseWhileStatement } from './controlFlow.ts'
 export { parseFuncStatement, parseReturnStatement } from './function.ts'
 export { parseLetStatement, parseAssignmentStatement } from './variable.ts'
 export { parseStructStatement } from './struct.ts'
 
-export function parseExpressionStatement(parser: Parser): ExpressionStatement {
-    const expression = parseExpression(parser)
+export function parseExpressionStatement(parser: Parser, expression: Expression): ExpressionStatement {
+    // const expression = parseExpression(parser)
     parser.match(TokenType.Semicolon)
 
     while (parser.eq(TokenType.Semicolon)) {

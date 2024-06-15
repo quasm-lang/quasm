@@ -262,17 +262,41 @@ export class CodeGenerator {
     }
 
     private visitAssignmentStatement(statement: AssignmentStatement): binaryen.ExpressionRef {
-        const name = statement.name.value
-        const value = this.visitExpression(statement.value)
-
-        // Find the identifier in the current scope stack
-        const variable = this.symbolTable.lookup(name) as VariableSymbol
-
-        if (variable === undefined) {
-            throw new Error(`Variable ${name} doesn\'t exist`)
-        }
+        switch (statement.left.type) {
+            case AstType.Identifier: {
+                const name = (statement.left as Identifier).value
+                const value = this.visitExpression(statement.value)
         
-        return this.module.local.set(variable.index, value)
+                // Find the identifier in the current scope stack
+                const variable = this.symbolTable.lookup(name) as VariableSymbol
+        
+                if (variable === undefined) {
+                    throw new Error(`Variable ${name} doesn\'t exist`)
+                }
+                
+                return this.module.local.set(variable.index, value)
+            }
+            case AstType.MemberAccessExpression: {
+                const memberAccess = statement.left as MemberAccessExpression
+                const structPointer = this.visitExpression(memberAccess.base)
+                const value = this.visitExpression(statement.value)
+
+                const symbol = this.symbolTable.lookup((memberAccess.base as Identifier).value)
+                const structName = (symbol as VariableSymbol).instanceOf
+                const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
+                const memberIndex = Array.from(structSymbol.members.keys()).indexOf(memberAccess.member.value)
+
+                if (memberIndex === -1) {
+                    throw new Error(`Member '${memberAccess.member.value}' not found in struct '${structSymbol.name}'`)
+                }
+
+                const offset = memberIndex * 4 // Assuming each member is 4 bytes (i32)
+
+                return this.module.i32.store(offset, 4, structPointer, value)
+            }
+            default:
+                throw new Error(`Invalid left-hand side of assignment: ${statement.left.type}`)
+        }
     }
 
     private visitIfStatement(statement: IfStatement): binaryen.ExpressionRef {
@@ -330,7 +354,7 @@ export class CodeGenerator {
             case AstType.CallExpression:
                 return this.visitCallExpression(expression as CallExpression)
             case AstType.MemberAccessExpression:
-                return this.memberAccessExpression(expression as MemberAccessExpression)
+                return this.visitMemberAccessExpression(expression as MemberAccessExpression)
             // Add cases for other expression types as needed
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
@@ -364,7 +388,7 @@ export class CodeGenerator {
 
     }
 
-    private memberAccessExpression(expression: MemberAccessExpression): binaryen.ExpressionRef {
+    private visitMemberAccessExpression(expression: MemberAccessExpression): binaryen.ExpressionRef {
         const symbol = this.symbolTable.lookup((expression.base as Identifier).value)
         const structName = (symbol as VariableSymbol).instanceOf
         const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
