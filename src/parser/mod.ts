@@ -134,7 +134,7 @@ export class Parser {
             return parseStructStatement(this)
         } else if (this.eq(TokenType.If)) {
             return parseIfStatement(this)
-        }else if (this.eq(TokenType.While)) {
+        } else if (this.eq(TokenType.While)) {
             return parseWhileStatement(this)
         } else {
             const expr = parseExpression(this)
