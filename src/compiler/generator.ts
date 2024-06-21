@@ -45,7 +45,8 @@ export class CodeGenerator {
             throw new Error(`Not valid program: ${node.type}`)
 
         try {
-            this.module.setMemory(1, 16, 'memory')
+            this.module.setFeatures(binaryen.Features.All)
+            this.module.setMemory(1, 16, 'memory', this.segment)
             this.module.addGlobal('_memoryOffset', binaryen.i32, true, this.module.i32.const(0))
 
             // First pass: Collect function and struct declarations
@@ -62,10 +63,6 @@ export class CodeGenerator {
             const error = err as Error
             console.log(error)
             Deno.exit(1)
-        }
-
-        if (this.segment.length > 0) {
-            this.module.setMemory(1, 1, 'memory', this.segment)
         }
 
         this.module.autoDrop()
