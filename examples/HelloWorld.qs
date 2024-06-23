@@ -1,3 +1,3 @@
 func main() {
-    printstr('Hello World!');
+    print('Hello World!');
 }
