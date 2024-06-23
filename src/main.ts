@@ -76,10 +76,10 @@ function compileAndRun(src: string) {
     const wasmModule = new WebAssembly.Module(module.emitBinary())
     const wasmInstance = new WebAssembly.Instance(wasmModule, {
         env: {
-            print: (value: number) => {
+            __print_i32: (value: number) => {
                 console.log(value)
             },
-            printstr: (stringPointer: number) => {
+            __print_str: (stringPointer: number) => {
                 const memory = wasmInstance.exports.memory as WebAssembly.Memory
                 const buffer = new Uint8Array(memory.buffer, stringPointer)
                 const string = new TextDecoder().decode(buffer.subarray(0, buffer.indexOf(0)))
