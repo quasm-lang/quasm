@@ -223,9 +223,6 @@ export class SemanticAnalyzer {
                 }
                 return functionInfo.returnType
             }
-            // case SymbolType.Struct: {
-            //     return DataType.struct
-            // }
             default:
                 throw new Error('Placeholder')
         } 

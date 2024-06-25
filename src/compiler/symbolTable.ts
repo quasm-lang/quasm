@@ -40,11 +40,7 @@ export interface StringLiteralSymbol extends Symbol {
 }
 
 class Scope {
-    symbols: Map<string, Symbol>
-
-    constructor() {
-        this.symbols = new Map()
-    }
+    symbols: Map<string, Symbol> = new Map()
 
     define(symbol: Symbol) {
         this.symbols.set(symbol.name, symbol)
@@ -76,6 +72,10 @@ export class SymbolTable {
         return this.scopes[this.scopes.length-1]
     }
 
+    currentScopeLastIndex(): number {
+        return this.last().size()
+    }
+
     define(symbol: Symbol) {
         switch (symbol.type) {
             case SymbolType.Variable: {
@@ -87,6 +87,9 @@ export class SymbolTable {
                 const strSymbol = symbol as StringLiteralSymbol
                 this.stringLiterals.set(strSymbol.value, strSymbol.offset ?? -1)
                 break
+            }
+            case SymbolType.Function: {
+                this.topLevel.set(symbol.name, symbol)
             }
         }
     }
@@ -104,24 +107,15 @@ export class SymbolTable {
             case SymbolType.Variable:
                 return this.last().lookup(name)
             case SymbolType.Function:
-            case SymbolType.Struct:
                 return this.topLevel.get(name)
         }
     }
 
-    currentScopeLastIndex(): number {
-        return this.last().size()
-    }
-
-    addFunction(symbol: Symbol) {
-        this.topLevel.set(symbol.name, symbol)
-    }
-
     getStringLiterals(): string[] {
-        return Array.from(this.stringLiterals.keys());
+        return Array.from(this.stringLiterals.keys())
     }
 
     updateStringLiteralOffset(value: string, offset: number) {
-        this.stringLiterals.set(value, offset);
+        this.stringLiterals.set(value, offset)
     }
 }

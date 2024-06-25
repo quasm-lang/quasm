@@ -101,7 +101,7 @@ export class CodeGenerator {
                 const returnType = func.returnType
 
                 // Add the function information to the symbol table
-                this.symbolTable.addFunction({ type: SymbolType.Function, name, params, returnType } as FunctionSymbol)
+                this.symbolTable.define({ type: SymbolType.Function, name, params, returnType } as FunctionSymbol)
             }
         }
     }
