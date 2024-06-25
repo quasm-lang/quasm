@@ -117,7 +117,7 @@ export enum DataType {
     f32 = 'f32',
     f64 = 'f64',
     none = 'none',
-    struct = 'struct'
+    string = 'string'
 }
 export type DataTypeToken = Token & {
     type: TokenType.Type

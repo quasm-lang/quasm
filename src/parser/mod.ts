@@ -20,12 +20,13 @@ import {
     parseIfStatement,
     parsePrintStatement
 } from './statements/mod.ts'
-import { parseExpression } from "./expressions/mod.ts";
+import { parseExpression } from './expressions/mod.ts'
+import { SymbolTable } from '../compiler/symbolTable.ts'
 
 export class Parser {
     curToken: Token
     
-    constructor(private lexer: Lexer) {
+    constructor(private lexer: Lexer, public symbolTable: SymbolTable) {
         this.curToken = this.lexer.nextToken()
     }
 

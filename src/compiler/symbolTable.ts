@@ -3,7 +3,8 @@ import { DataType } from '../lexer/token.ts'
 export enum SymbolType {
     Variable,
     Function,
-    Struct
+    Struct,
+    StringLiteral
 }
 
 export interface Symbol {
@@ -32,6 +33,12 @@ export interface FunctionSymbol extends Symbol {
     returnType: DataType
 }
 
+export interface StringLiteralSymbol extends Symbol {
+    type: SymbolType.StringLiteral
+    value: string
+    offset?: number
+}
+
 class Scope {
     symbols: Map<string, Symbol>
 
@@ -53,13 +60,9 @@ class Scope {
 }
 
 export class SymbolTable {
-    private topLevel: Map<string, Symbol>
-    private scopes: Scope[]
-
-    constructor() {
-        this.scopes = [new Scope()]
-        this.topLevel = new Map()
-    }
+    private topLevel: Map<string, Symbol> = new Map()
+    private scopes: Scope[] = [new Scope()]
+    private stringLiterals: Map<string, number> = new Map()
 
     enterScope() {
         this.scopes.push(new Scope())
@@ -74,24 +77,51 @@ export class SymbolTable {
     }
 
     define(symbol: Symbol) {
-        const currentScope = this.scopes[this.scopes.length - 1]
-        currentScope.define(symbol)
+        switch (symbol.type) {
+            case SymbolType.Variable: {
+                const currentScope = this.scopes[this.scopes.length - 1]
+                currentScope.define(symbol)
+                break
+            }
+            case SymbolType.StringLiteral: {
+                const strSymbol = symbol as StringLiteralSymbol
+                this.stringLiterals.set(strSymbol.value, strSymbol.offset ?? -1)
+                break
+            }
+        }
     }
 
-    lookup(name: string): Symbol | undefined {
-        return this.last().lookup(name)
+    lookup(symbolType: SymbolType, name: string): Symbol | undefined {
+        switch (symbolType) {
+            case SymbolType.StringLiteral: {
+                const offset = this.stringLiterals.get(name)
+                return {
+                    name: `_str_${offset}`,
+                    value: name,
+                    offset: this.stringLiterals.get(name)
+                } as StringLiteralSymbol
+            }
+            case SymbolType.Variable:
+                return this.last().lookup(name)
+            case SymbolType.Function:
+            case SymbolType.Struct:
+                return this.topLevel.get(name)
+        }
     }
 
     currentScopeLastIndex(): number {
-        return this.scopes[this.scopes.length - 1].size()
+        return this.last().size()
     }
 
-    // addFunction(name: string, params: DataType[], returnType: DataType) {
     addFunction(symbol: Symbol) {
         this.topLevel.set(symbol.name, symbol)
     }
 
-    getFunction(name: string): Symbol | undefined {
-        return this.topLevel.get(name)
+    getStringLiterals(): string[] {
+        return Array.from(this.stringLiterals.keys());
+    }
+
+    updateStringLiteralOffset(value: string, offset: number) {
+        this.stringLiterals.set(value, offset);
     }
 }

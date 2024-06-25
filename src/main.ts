@@ -5,23 +5,24 @@ import { CodeGenerator } from './compiler/generator.ts'
 import { Command } from './deps.ts'
 import { ensureDirSync } from 'std/fs/mod.ts'
 import { basename, join } from 'std/path/mod.ts'
+import { SymbolTable } from './compiler/symbolTable.ts'
 
 await new Command()
     .name('Quasm')
-    .version('0.0.3')
+    .version('0.0.4')
     .description('Compiles to WASM')
     .globalOption('-d, --debug', 'Enable debug output.')
     .action(() => console.log('Please use proper commands!'))
 
     .command('run', 'Compile internally and run')
-    .arguments("<source:string>")
+    .arguments('<source:string>')
     .action((_, ...args) => {
         const file = args[0]
         compileAndRun(load(file))
     })
 
-    .command("compile", 'Compile to WASM binary')
-    .arguments("<file:string> [dest:string]")
+    .command('compile', 'Compile to WASM binary')
+    .arguments('<file:string> [dest:string]')
     .action((_, ...args) => {
         const file = args[0]
         const dest = args[1] ? args[1] : file.replace(/\.[^/.]+$/, '')
@@ -44,16 +45,18 @@ function load(file: string): string {
 }
 
 function emit(src: string) {
+    const symbolTable = new SymbolTable()
+    
     // Parsing
     const lexer = new Lexer(src)
-    const parser = new Parser(lexer)
+    const parser = new Parser(lexer, symbolTable)
     const ast = parser.parseProgram()
 
     // Debug
     ensureDirSync('./debug')
     Deno.writeTextFileSync('./debug/ast.json', JSON.stringify(ast, null, 2))
 
-    const codeGen = new CodeGenerator()
+    const codeGen = new CodeGenerator(symbolTable)
     const module = codeGen.visit(ast)
     Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(module.emitText()))
     Deno.writeFileSync('./debug/output.stackIR.wat', new TextEncoder().encode(module.emitStackIR()))
@@ -79,11 +82,13 @@ function compileAndRun(src: string) {
             __print_i32: (value: number) => {
                 console.log(value)
             },
-            __print_str: (stringPointer: number) => {
+            __print_str: (ptr: number) => {
                 const memory = wasmInstance.exports.memory as WebAssembly.Memory
-                const buffer = new Uint8Array(memory.buffer, stringPointer)
-                const string = new TextDecoder().decode(buffer.subarray(0, buffer.indexOf(0)))
-                console.log(string)
+                const view = new DataView(memory.buffer)
+                const len = view.getUint32(ptr, true) // Read the length (first 4 bytes)
+                const bytes = new Uint8Array(memory.buffer, ptr + 4, len)
+                const str = new TextDecoder().decode(bytes)
+                console.log(str)
             }
         },
     })
@@ -91,6 +96,9 @@ function compileAndRun(src: string) {
     console.log('>')
     const main = wasmInstance.exports.main as CallableFunction
     main()
+
+    // const memory = wasmInstance.exports.memory as WebAssembly.Memory
+    // console.log(memory.buffer)
 }
 
 function compile(src: string, dest: string) {

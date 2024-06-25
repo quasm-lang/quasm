@@ -3,21 +3,21 @@ import { binaryen } from '../deps.ts'
 import { AstType } from '../parser/ast.ts'
 import * as Ast from '../parser/ast.ts'
 
-import { TokenType, DataType } from '../lexer/token.ts'
+import { DataType, TokenType } from '../lexer/token.ts'
 import { getWasmType } from './utils.ts'
-import { FunctionSymbol, StructSymbol, SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
+import { FunctionSymbol, StringLiteralSymbol, StructSymbol, SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
 import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 
 export class CodeGenerator {
     private module: binaryen.Module
-    private symbolTable: SymbolTable
+    // private symbolTable: SymbolTable
+    private semanticAnalyzer: SemanticAnalyzer
     private memoryOffset = 0
     private segment: binaryen.MemorySegment[] = []
-    private semanticAnalyzer: SemanticAnalyzer
 
-    constructor() {
+    constructor(private symbolTable: SymbolTable) {
         this.module = new binaryen.Module()
-        this.symbolTable = new SymbolTable()
+        // this.symbolTable = new SymbolTable()
         this.semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
         
         this.module.addFunctionImport(
@@ -29,9 +29,9 @@ export class CodeGenerator {
         )
         
         this.module.addFunctionImport(
-            '__printstr',
+            '__print_str',
             'env',
-            '__printstr',
+            '__print_str',
             binaryen.createType([binaryen.i32]),
             binaryen.none
         )
@@ -46,28 +46,50 @@ export class CodeGenerator {
 
         try {
             this.module.setFeatures(binaryen.Features.All)
+            this.prepareStringSegments()
             this.module.setMemory(1, 16, 'memory', this.segment)
-            this.module.addGlobal('_memoryOffset', binaryen.i32, true, this.module.i32.const(0))
-
-            // First pass: Collect function and struct declarations
+            
+            // First pass: Collect function declarations
             this.collectFirstPass(node as Ast.Program)
-
+            
             // Second pass: Semantic Analyzer
             const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
             semanticAnalyzer.check(node as Ast.Program)
             
             // Third pass: Generate WebAssembly code
-            const _program = this.visitProgram(node as Ast.Program)
-            // console.log(_program)
+            this.visitProgram(node as Ast.Program)
+            
+            this.module.autoDrop()
         } catch (err) {
             const error = err as Error
             console.log(error)
             Deno.exit(1)
         }
-
-        this.module.autoDrop()
         
         return this.module
+    }
+
+    private prepareStringSegments() {
+        let currentOffset = 0;
+        for (const value of this.symbolTable.getStringLiterals()) {
+            const strBytes = new TextEncoder().encode(value)
+            const lengthBytes = new Uint8Array(4)
+            new DataView(lengthBytes.buffer).setUint32(0, strBytes.length, true)
+            
+            const fullData = new Uint8Array(4 + strBytes.length)
+            fullData.set(lengthBytes)
+            fullData.set(strBytes, 4)
+
+            this.segment.push({
+                offset: this.module.i32.const(currentOffset),
+                data: fullData,
+                passive: false
+            })
+
+            this.symbolTable.updateStringLiteralOffset(value, currentOffset)
+            currentOffset += fullData.length
+        }
+        this.memoryOffset = currentOffset
     }
 
     private collectFirstPass(program: Ast.Program) {
@@ -80,45 +102,6 @@ export class CodeGenerator {
 
                 // Add the function information to the symbol table
                 this.symbolTable.addFunction({ type: SymbolType.Function, name, params, returnType } as FunctionSymbol)
-            } else if (statement.type === AstType.StructDeclaration) {
-                const struct = statement as Ast.StructDeclaration
-                const name = struct.name.value
-                const members = new Map<string, DataType>()
-
-                let size = 0
-                for (const field of struct.fields) {
-                    if (field.dataType === DataType.i32) {
-                        size = size + 4
-                    }
-                    members.set(field.name.value, field.dataType)
-                }
-                this.symbolTable.addFunction({ type: SymbolType.Struct, name, members, size } as StructSymbol)
-
-                // Generate a function that creates a pointer to the struct
-                const functionName = `__newStruct_${name}`
-                const wasmParams = struct.fields.map(field => getWasmType(field.dataType))
-                const block: binaryen.ExpressionRef[] = []
-
-                const memoryOffset = this.module.global.get('_memoryOffset', binaryen.i32)
-                const structPointer = this.module.local.tee(wasmParams.length, memoryOffset, binaryen.i32)
-
-                let offset = 0
-                for (let i = 0; i < wasmParams.length; i++) {
-                    const param = this.module.local.get(i, wasmParams[i])
-                    block.push(this.module.i32.store(offset, 4, structPointer, param))
-                    offset += 4
-                }
-                // Update the memory offset in the WebAssembly module
-                block.push(this.module.global.set('_memoryOffset', this.module.i32.add(memoryOffset, this.module.i32.const(size))))
-                block.push(this.module.return(this.module.local.get(wasmParams.length, binaryen.i32)))
-
-                this.module.addFunction(
-                    functionName,
-                    binaryen.createType(wasmParams),
-                    binaryen.i32,
-                    [binaryen.i32],
-                    this.module.block(null, block, binaryen.i32)
-                )
             }
         }
     }
@@ -144,7 +127,7 @@ export class CodeGenerator {
             case AstType.LetStatement:
                 return this.visitLetStatement(statement as Ast.LetStatement)
             case AstType.FuncStatement:
-                return this.visitFnStatement(statement as Ast.FuncStatement)
+                return this.visitFuncStatement(statement as Ast.FuncStatement)
             case AstType.ReturnStatement:
                 return this.visitReturnStatement(statement as Ast.ReturnStatement)
             case AstType.AssignmentStatement:
@@ -158,14 +141,10 @@ export class CodeGenerator {
             default:
                 throw new Error(`Unhandled statement type: ${statement.type}`)
         }
-    }
-
-    // private inferDataType(expression: Ast.Expression): DataType {
-    //     return this.semanticAnalyzer.visitExpression(expression)
-    // }    
+    } 
 
     private visitLetStatement(statement: Ast.LetStatement): binaryen.ExpressionRef {
-        const { value } = statement.spec
+        const { name, value } = statement.spec
         
         let initExpr: binaryen.ExpressionRef
         // let inferredType: DataType | undefined
@@ -177,17 +156,17 @@ export class CodeGenerator {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
             // inferredType = DataType.i32
         }
-
-        // finalize the data type
-        // const finalType = dataType || inferredType
         
         // const index = this.symbolTable.currentScopeLastIndex()
-        const index = this.semanticAnalyzer.visitLetStatement(statement)
+        const finalType = this.semanticAnalyzer.visitLetStatement(statement)
+
+        const index = this.symbolTable.currentScopeLastIndex()
+        this.symbolTable.define({ type: SymbolType.Variable, name: name.value, dataType: finalType, index, reason: 'declaration' } as VariableSymbol)
         
         return this.module.local.set(index, initExpr)
     }
 
-    private visitFnStatement(func: Ast.FuncStatement): binaryen.ExpressionRef {
+    private visitFuncStatement(func: Ast.FuncStatement): binaryen.ExpressionRef {
         const name = func.name.value
 
         // handle parameters
@@ -246,31 +225,13 @@ export class CodeGenerator {
                 const value = this.visitExpression(statement.value)
         
                 // Find the identifier in the current scope stack
-                const variable = this.symbolTable.lookup(name) as VariableSymbol
+                const variable = this.symbolTable.lookup(SymbolType.Variable, name) as VariableSymbol
         
                 if (variable === undefined) {
                     throw new Error(`Variable ${name} doesn\'t exist`)
                 }
                 
                 return this.module.local.set(variable.index, value)
-            }
-            case AstType.MemberAccessExpression: {
-                const memberAccess = statement.left as Ast.MemberAccessExpression
-                const structPointer = this.visitExpression(memberAccess.base)
-                const value = this.visitExpression(statement.value)
-
-                const symbol = this.symbolTable.lookup((memberAccess.base as Ast.Identifier).value)
-                const structName = (symbol as VariableSymbol).instanceOf
-                const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
-                const memberIndex = Array.from(structSymbol.members.keys()).indexOf(memberAccess.member.value)
-
-                if (memberIndex === -1) {
-                    throw new Error(`Member '${memberAccess.member.value}' not found in struct '${structSymbol.name}'`)
-                }
-
-                const offset = memberIndex * 4 // Assuming each member is 4 bytes (i32)
-
-                return this.module.i32.store(offset, 4, structPointer, value)
             }
             default:
                 throw new Error(`Invalid left-hand side of assignment: ${statement.left.type}`)
@@ -311,9 +272,16 @@ export class CodeGenerator {
     }
 
     private visitPrintStatement(statement: Ast.PrintStatement): binaryen.ExpressionRef {
-        const dataType = this.semanticAnalyzer.visitExpression(statement.expression) // TODO: call specific print function based on data type
+        const dataType = this.semanticAnalyzer.visitExpression(statement.expression)
         const val = this.visitExpression(statement.expression)
-        return this.module.call('__print_i32', [val], binaryen.none)
+
+        switch (dataType) {
+            case DataType.string:
+                return this.module.call('__print_str', [val], binaryen.none)
+            default:
+                return this.module.call('__print_i32', [val], binaryen.none)
+        }
+
     }
 
     private visitExpressionStatement(statement: Ast.ExpressionStatement): binaryen.ExpressionRef {
@@ -337,8 +305,6 @@ export class CodeGenerator {
                     return this.visitIdentifier(expression as Ast.Identifier)
             case AstType.CallExpression:
                 return this.visitCallExpression(expression as Ast.CallExpression)
-            case AstType.MemberAccessExpression:
-                return this.visitMemberAccessExpression(expression as Ast.MemberAccessExpression)
             // Add cases for other expression types as needed
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
@@ -349,7 +315,7 @@ export class CodeGenerator {
         const name = expression.callee.value
 
         // Check if the function is declared in the symbol table
-        const symbol = this.symbolTable.getFunction(name)
+        const symbol = this.symbolTable.lookup(SymbolType.Function, name)
         if (!symbol) {
             throw new Error(`Undefined call expression: ${name}`)
         }
@@ -370,26 +336,6 @@ export class CodeGenerator {
                 throw new Error('Placeholder')
         }
 
-    }
-
-    private visitMemberAccessExpression(expression: Ast.MemberAccessExpression): binaryen.ExpressionRef {
-        const symbol = this.symbolTable.lookup((expression.base as Ast.Identifier).value)
-        const structName = (symbol as VariableSymbol).instanceOf
-        const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
-        const memberIndex = Array.from(structSymbol.members.keys()).indexOf(expression.member.value)
-
-        if (memberIndex === -1) {
-            throw new Error(`Member '${expression.member.value}' not found in struct '${structSymbol.name}'`)
-        }
-
-        const offset = memberIndex * 4 // Assuming each member is 4 bytes (i32)
-
-        const structPointer = this.visitExpression(expression.base)
-        const memberPointer = this.module.i32.add(structPointer, this.module.i32.const(offset))
-
-        
-        const memberType = structSymbol.members.get(expression.member.value)!
-        return this.module.i32.load(offset, 4, structPointer)
     }
     
     private visitUnaryExpression(expression: Ast.UnaryExpression): binaryen.ExpressionRef {
@@ -458,24 +404,16 @@ export class CodeGenerator {
 
     // Returns initial pointer of string
     private visitStringLiteral(node: Ast.StringLiteral): binaryen.ExpressionRef {
-        const encodedString = new TextEncoder().encode(node.value + '\0') // includes the null terminator
-        const stringPointer = this.module.i32.const(this.memoryOffset)
-
-        // Append the string segment to the existing segment array
-        this.segment.push({
-            offset: stringPointer,
-            data: encodedString
-        })
-
-        // Update the memory offset
-        this.memoryOffset += encodedString.length
-        
-        return stringPointer
+        const symbol = this.symbolTable.lookup(SymbolType.StringLiteral, node.value) as StringLiteralSymbol
+        if (symbol.offset === undefined) {
+            throw new Error(`String literal offset not found: ${node.value}`)
+        }
+        return this.module.i32.const(symbol.offset)
     }
     
 
     private visitIdentifier(identifier: Ast.Identifier): binaryen.ExpressionRef {
-        const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
+        const variable = this.symbolTable.lookup(SymbolType.Variable, identifier.value) as VariableSymbol
         if (variable === undefined) {
             throw new Error(`Variable ${identifier.value} not found in scope`)
         }

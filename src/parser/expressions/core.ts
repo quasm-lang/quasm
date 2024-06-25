@@ -2,7 +2,7 @@ import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
-
+import { StringLiteralSymbol, SymbolType } from '../../compiler/symbolTable.ts'
 
 export function parseIntegerLiteral(parser: Parser): Ast.IntegerLiteral {
     return {
@@ -21,9 +21,16 @@ export function parseFloatLiteral(parser: Parser): Ast.FloatLiteral {
 }
 
 export function parseStringLiteral(parser: Parser): Ast.StringLiteral {
+    const value = parser.consume().literal
+    parser.symbolTable.define({
+        type: SymbolType.StringLiteral,
+        name: `_str_${value}`,
+        value
+    } as StringLiteralSymbol)
+    
     return {
         type: AstType.StringLiteral,
-        value: parser.consume().literal,
+        value,
         location: parser.getLocation()
     }
 }

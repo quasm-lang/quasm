@@ -4,11 +4,7 @@ import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, StructSymbol }
 import { DataType, TokenType } from '../lexer/token.ts'
 
 export class SemanticAnalyzer {
-    private symbolTable: SymbolTable
-
-    constructor(symbolTable: SymbolTable) {
-        this.symbolTable = symbolTable
-    }
+    constructor(private symbolTable: SymbolTable) {}
 
     check(ast: Ast.Program) {
         this.visitProgram(ast)
@@ -30,7 +26,7 @@ export class SemanticAnalyzer {
                 this.visitLetStatement(statement as Ast.LetStatement)
                 break
             case AstType.FuncStatement:
-                this.visitFnStatement(statement as Ast.FuncStatement)
+                this.visitFuncStatement(statement as Ast.FuncStatement)
                 break
             case AstType.ReturnStatement:
                 this.visitReturnStatement(statement as Ast.ReturnStatement)
@@ -44,7 +40,7 @@ export class SemanticAnalyzer {
         }
     }
 
-    visitLetStatement(statement: Ast.LetStatement): number {
+    visitLetStatement(statement: Ast.LetStatement): DataType {
         const { name, dataType, value } = statement.spec
 
         if (dataType === undefined && value === undefined) {
@@ -63,22 +59,19 @@ export class SemanticAnalyzer {
             throw new Error(`Type mismatch: Expected ${dataType}, but got ${inferredType} for variable '${name.value}'`)
         }
 
-        let instanceOf: string | undefined
-        if (statement.spec.value && statement.spec.value.type === AstType.CallExpression) {
-            const stmt = statement.spec.value as Ast.CallExpression
-            const symbol = this.symbolTable.getFunction(stmt.callee.value)
-            if (symbol?.type === SymbolType.Struct) {
-                instanceOf = (symbol as StructSymbol).name
-            }
-        }
+        // let instanceOf: string | undefined
+        // if (statement.spec.value && statement.spec.value.type === AstType.CallExpression) {
+        //     const stmt = statement.spec.value as Ast.CallExpression
+        //     const symbol = this.symbolTable.lookup(SymbolType.Function, stmt.callee.value)
+        //     if (symbol?.type === SymbolType.Struct) {
+        //         instanceOf = (symbol as StructSymbol).name
+        //     }
+        // }
 
-        const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.define({ type: SymbolType.Variable, name: name.value, dataType: finalType, instanceOf, index, reason: 'declaration' } as VariableSymbol)
-
-        return index
+        return finalType
     }
 
-    visitFnStatement(statement: Ast.FuncStatement) {
+    visitFuncStatement(statement: Ast.FuncStatement) {
         const { name, parameters, returnType, body } = statement
     
         // Create a new scope for the function
@@ -119,7 +112,7 @@ export class SemanticAnalyzer {
         switch (left.type) {
             case AstType.Identifier: {
                 const left_ = left as Ast.Identifier
-                const variableType = (this.symbolTable.lookup(left_.value) as VariableSymbol)?.dataType
+                const variableType = (this.symbolTable.lookup(SymbolType.Variable, left_.value) as VariableSymbol)?.dataType
                 const valueType = this.visitExpression(value)
         
                 if (!variableType) {
@@ -136,7 +129,6 @@ export class SemanticAnalyzer {
                 break
             }
         }
-
     }
 
     visitExpressionStatement(statement: Ast.ExpressionStatement) {
@@ -159,18 +151,18 @@ export class SemanticAnalyzer {
                 return this.visitUnaryExpression(expression as Ast.UnaryExpression)
             case AstType.CallExpression:
                 return this.visitCallExpression(expression as Ast.CallExpression)
-            case AstType.MemberAccessExpression:
-                return this.visitMemberAccessExpression(expression as Ast.MemberAccessExpression)
+            // case AstType.MemberAccessExpression:
+            //     return this.visitMemberAccessExpression(expression as Ast.MemberAccessExpression)
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
         }
     }
 
     visitIdentifier(identifier: Ast.Identifier): DataType {
-        const variable = this.symbolTable.lookup(identifier.value) as VariableSymbol
+        const variable = this.symbolTable.lookup(SymbolType.Variable, identifier.value) as VariableSymbol
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
-        };
+        }
         return variable.dataType
     }
 
@@ -183,7 +175,7 @@ export class SemanticAnalyzer {
     }
 
     visitStringLiteral(_str: Ast.StringLiteral): DataType {
-        return DataType.i32 // Assuming strings are represented as pointers (i32)
+        return DataType.string
     }
 
     visitBinaryExpression(expression: Ast.BinaryExpression): DataType {
@@ -208,7 +200,7 @@ export class SemanticAnalyzer {
     }
     
     visitCallExpression(expression: Ast.CallExpression): DataType {
-        const symbol = this.symbolTable.getFunction(expression.callee.value)
+        const symbol = this.symbolTable.lookup(SymbolType.Function, expression.callee.value)
 
         if (!symbol) {
             throw new Error(`Undefined function '${expression.callee.value}'`)
@@ -231,37 +223,11 @@ export class SemanticAnalyzer {
                 }
                 return functionInfo.returnType
             }
-            case SymbolType.Struct: {
-                return DataType.struct
-            }
+            // case SymbolType.Struct: {
+            //     return DataType.struct
+            // }
             default:
                 throw new Error('Placeholder')
         } 
-    }
-
-    visitMemberAccessExpression(expression: Ast.MemberAccessExpression): DataType {
-        const objectType = this.visitExpression(expression.base)
-        if (objectType !== DataType.struct) {
-            throw new Error('Member access is only allowed on struct instances')
-        }
-
-        if (expression.base.type !== AstType.Identifier) {
-            throw new Error('Should be Identifier')
-        }
-
-        const symbol = this.symbolTable.lookup((expression.base as Ast.Identifier).value)
-
-        if (!symbol) {
-            throw new Error('Doesn\'t exist')
-        }
-
-        const structName = (symbol as VariableSymbol).instanceOf
-        const structSymbol = this.symbolTable.getFunction(structName!) as StructSymbol
-        const memberType = structSymbol.members.get(expression.member.value)
-        if (!memberType) {
-            throw new Error(`Member ${expression.member.value} not found in struct ${structSymbol.name}`)
-        }
-
-        return memberType
     }
 }
