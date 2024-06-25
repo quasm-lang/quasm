@@ -46,7 +46,7 @@ export function parsePrefixExpression(parser: Parser): Ast.Expression {
         case TokenType.String:
             return parseStringLiteral(parser)
         case TokenType.Identifier:
-            return parseIdentifier(parser)
+            return parseIdentifierOrCallExpression(parser)
         case TokenType.Minus:
             return parseUnaryExpression(parser)
         case TokenType.LeftParen:
@@ -65,18 +65,8 @@ export function parseInfixExpression(parser: Parser, left: Ast.Expression): Ast.
         case TokenType.LessThan:
         case TokenType.Equality:
         case TokenType.LessThanOrEqual:
-        case TokenType.GreaterThanOrEqual: {
-            const operator = parser.match(parser.curToken.type).type
-            const precedence = getPrecedence(operator)
-            const right = parseExpression(parser, precedence)
-            return {
-                type: AstType.BinaryExpression,
-                left,
-                operator,
-                right,
-                location: parser.getLocation()
-            } as Ast.BinaryExpression
-        }
+        case TokenType.GreaterThanOrEqual:
+            return parseBinaryExpression(parser, left)
         case TokenType.LeftParen:
             return parseCallExpression(parser, left as Ast.Identifier)
         case TokenType.Dot: {
@@ -94,6 +84,15 @@ export function parseInfixExpression(parser: Parser, left: Ast.Expression): Ast.
     }
 }
 
+function parseIdentifierOrCallExpression(parser: Parser): Ast.Expression {
+    const identifier = parseIdentifier(parser)
+
+    if (parser.eq(TokenType.LeftParen)) {
+        return parseCallExpression(parser, identifier)
+    }
+    return identifier
+}
+
 function parseUnaryExpression(parser: Parser): Ast.UnaryExpression {
     return {
         type: AstType.UnaryExpression,
@@ -108,6 +107,20 @@ function parseGroupedExpression(parser: Parser): Ast.Expression {
     const expression = parseExpression(parser)
     parser.match(TokenType.RightParen)
     return expression
+}
+
+export function parseBinaryExpression(parser: Parser, left: Ast.Expression): Ast.BinaryExpression {
+    const operator = parser.consume().type
+    const precedence = getPrecedence(operator)
+    const right = parseExpression(parser, precedence)
+
+    return {
+        type: AstType.BinaryExpression,
+        left,
+        operator,
+        right,
+        location: parser.getLocation()
+    } as Ast.BinaryExpression
 }
 
 function parseCallExpression(parser: Parser, identifier: Ast.Identifier): Ast.CallExpression {
