@@ -18,13 +18,12 @@ export class CodeGenerator {
 
     constructor(private symbolTable: SymbolTable) {
         this.module = new binaryen.Module()
-        // this.symbolTable = new SymbolTable()
         this.semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
         
         this.module.addFunctionImport(
-            '__print_i32',
+            '__print_primitive',
             'env',
-            '__print_i32',
+            '__print_primitive',
             binaryen.i32,
             binaryen.none
         )
@@ -36,9 +35,6 @@ export class CodeGenerator {
             binaryen.createType([binaryen.i32]),
             binaryen.none
         )
-        
-        // this.symbolTable.addFunction({ type: SymbolType.Function, name: 'print', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
-        // this.symbolTable.addFunction({ type: SymbolType.Function, name: 'printstr', params: [DataType.i32], returnType: DataType.none } as FunctionSymbol)
     }
     
     public visit(node: Ast.Node) {
@@ -148,14 +144,12 @@ export class CodeGenerator {
         const { name, value } = statement.spec
         
         let initExpr: binaryen.ExpressionRef
-        // let inferredType: DataType | undefined
 
         if (value) {
             initExpr = this.visitExpression(value)
             // inferredType = this.inferDataType(value)
         } else {
             initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
-            // inferredType = DataType.i32
         }
         
         // const index = this.symbolTable.currentScopeLastIndex()
@@ -280,7 +274,7 @@ export class CodeGenerator {
             case DataType.string:
                 return this.module.call('__print_str', [val], binaryen.none)
             default:
-                return this.module.call('__print_i32', [val], binaryen.none)
+                return this.module.call('__print_primitive', [val], binaryen.none)
         }
 
     }

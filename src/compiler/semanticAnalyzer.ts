@@ -1,6 +1,6 @@
 import { AstType } from '../parser/ast.ts'
 import * as Ast from '../parser/ast.ts'
-import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, StructSymbol } from './symbolTable.ts'
+import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol } from './symbolTable.ts'
 import { TokenType } from '../lexer/token.ts'
 import { DataType } from '../datatype/mod.ts'
 
@@ -60,15 +60,6 @@ export class SemanticAnalyzer {
             throw new Error(`Type mismatch: Expected ${dataType}, but got ${inferredType} for variable '${name.value}'`)
         }
 
-        // let instanceOf: string | undefined
-        // if (statement.spec.value && statement.spec.value.type === AstType.CallExpression) {
-        //     const stmt = statement.spec.value as Ast.CallExpression
-        //     const symbol = this.symbolTable.lookup(SymbolType.Function, stmt.callee.value)
-        //     if (symbol?.type === SymbolType.Struct) {
-        //         instanceOf = (symbol as StructSymbol).name
-        //     }
-        // }
-
         return finalType
     }
 
@@ -125,10 +116,6 @@ export class SemanticAnalyzer {
                 }
                 break
             }
-            case AstType.MemberAccessExpression: {
-                // TODO
-                break
-            }
         }
     }
 
@@ -152,8 +139,6 @@ export class SemanticAnalyzer {
                 return this.visitUnaryExpression(expression as Ast.UnaryExpression)
             case AstType.CallExpression:
                 return this.visitCallExpression(expression as Ast.CallExpression)
-            // case AstType.MemberAccessExpression:
-            //     return this.visitMemberAccessExpression(expression as Ast.MemberAccessExpression)
             default:
                 throw new Error(`Unhandled expression type: ${expression.type}`)
         }
