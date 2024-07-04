@@ -73,11 +73,11 @@ export class Parser {
     // }
 
     eqDataType(): boolean {
-        return this.curToken.type === TokenType.Type
+        return this.curToken.type === TokenType.DataType
     }
 
     matchDataType(): DataTypeToken {
-        if (this.curToken.type === TokenType.Type) {
+        if (this.curToken.type === TokenType.DataType) {
             return this.consume() as DataTypeToken
         }
         throw new Error(`Parser error: Expected a data type, but got '${this.curToken.type}'`)

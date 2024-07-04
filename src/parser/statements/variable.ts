@@ -1,5 +1,6 @@
 import { Parser } from '../mod.ts'
-import { TokenType, DataType } from '../../lexer/token.ts'
+import { TokenType } from '../../lexer/token.ts'
+import { DataType } from '../../datatype/mod.ts'
 import { parseIdentifier } from '../expressions/core.ts'
 import { parseExpression } from '../expressions/mod.ts'
 import { AstType } from '../ast.ts'

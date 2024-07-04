@@ -1,7 +1,8 @@
 import { AstType } from '../parser/ast.ts'
 import * as Ast from '../parser/ast.ts'
 import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, StructSymbol } from './symbolTable.ts'
-import { DataType, TokenType } from '../lexer/token.ts'
+import { TokenType } from '../lexer/token.ts'
+import { DataType } from '../datatype/mod.ts'
 
 export class SemanticAnalyzer {
     constructor(private symbolTable: SymbolTable) {}

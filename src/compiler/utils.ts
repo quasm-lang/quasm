@@ -1,5 +1,5 @@
 import { binaryen } from '../deps.ts'
-import { DataType } from '../lexer/token.ts'
+import { DataType } from '../datatype/mod.ts'
 
 const dataTypeToWasmTypeMap: Record<DataType, binaryen.Type> = {
     i32: binaryen.i32,

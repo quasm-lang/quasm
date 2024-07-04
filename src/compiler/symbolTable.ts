@@ -1,4 +1,4 @@
-import { DataType } from '../lexer/token.ts'
+import { DataType } from '../datatype/mod.ts'
 
 export enum SymbolType {
     Variable,

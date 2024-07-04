@@ -1,8 +1,9 @@
 import {
-    DataType,
     InfixOperator,
     TokenType
 } from '../lexer/token.ts'
+
+import { DataType } from '../datatype/mod.ts'
 
 export enum AstType {
     Program = 'PROGRAM',
