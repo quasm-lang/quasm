@@ -1,6 +1,6 @@
 import { AstType } from '../parser/ast.ts'
 import * as Ast from '../parser/ast.ts'
-import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol } from './symbolTable.ts'
+import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, VariableReason } from './symbolTable.ts'
 import { TokenType } from '../lexer/token.ts'
 import { DataType } from '../datatype/mod.ts'
 
@@ -71,7 +71,7 @@ export class SemanticAnalyzer {
     
         // Add function parameters to the symbol table
         for (const param of parameters) {
-            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index: 0, reason: 'parameter' } as VariableSymbol)
+            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index: 0, reason: VariableReason.parameter } as VariableSymbol)
         }
     
         // Visit the function body

@@ -12,12 +12,17 @@ export interface Symbol {
     name: string
 }
 
+export enum VariableReason {
+    declaration,
+    parameter
+}
+
 export interface VariableSymbol extends Symbol {
     type: SymbolType.Variable
     dataType: DataType
     instanceOf?: string
     index: number
-    reason: 'declaration' | 'parameter'
+    reason: VariableReason
 }
 
 export interface StructSymbol extends Symbol {

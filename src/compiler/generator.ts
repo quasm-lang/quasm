@@ -6,12 +6,11 @@ import * as Ast from '../parser/ast.ts'
 import { TokenType } from '../lexer/token.ts'
 import { DataType } from '../datatype/mod.ts'
 import { getWasmType } from './utils.ts'
-import { FunctionSymbol, StringLiteralSymbol, StructSymbol, SymbolTable, SymbolType, VariableSymbol } from './symbolTable.ts'
+import { FunctionSymbol, StringLiteralSymbol, StructSymbol, SymbolTable, SymbolType, VariableReason, VariableSymbol } from './symbolTable.ts'
 import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 
 export class CodeGenerator {
     private module: binaryen.Module
-    // private symbolTable: SymbolTable
     private semanticAnalyzer: SemanticAnalyzer
     private memoryOffset = 0
     private segment: binaryen.MemorySegment[] = []
@@ -156,7 +155,7 @@ export class CodeGenerator {
         const finalType = this.semanticAnalyzer.visitLetStatement(statement)
 
         const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.define({ type: SymbolType.Variable, name: name.value, dataType: finalType, index, reason: 'declaration' } as VariableSymbol)
+        this.symbolTable.define({ type: SymbolType.Variable, name: name.value, dataType: finalType, index, reason: VariableReason.declaration } as VariableSymbol)
         
         return this.module.local.set(index, initExpr)
     }
@@ -170,7 +169,7 @@ export class CodeGenerator {
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index, reason: 'parameter' } as VariableSymbol)
+            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index, reason: VariableReason.parameter } as VariableSymbol)
         }
 
         // handle return type
@@ -185,7 +184,7 @@ export class CodeGenerator {
         for (const [_name, value] of this.symbolTable.last().symbols) {
             switch (value.type) {
                 case SymbolType.Variable:
-                    if ((value as VariableSymbol).reason === 'declaration') {
+                    if ((value as VariableSymbol).reason === VariableReason.parameter) {
                         vars.push(getWasmType((value as VariableSymbol).dataType))
                     }
             }
