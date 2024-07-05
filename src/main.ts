@@ -93,7 +93,7 @@ function compileAndRun(src: string) {
         },
     })
 
-    console.log('>')
+    // console.log('>')
     const main = wasmInstance.exports.main as CallableFunction
     main()
 
