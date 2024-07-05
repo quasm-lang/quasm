@@ -1,10 +1,10 @@
 import { DataType } from '../datatype/mod.ts'
 
 export enum SymbolType {
-    Variable,
-    Function,
-    Struct,
-    StringLiteral
+    Variable = 'variable',
+    Function = 'function',
+    Struct = 'struct',
+    StringLiteral = 'stringLiteral'
 }
 
 export interface Symbol {
@@ -13,8 +13,8 @@ export interface Symbol {
 }
 
 export enum VariableReason {
-    declaration,
-    parameter
+    Declaration = 'declaration',
+    Parameter = 'parameter',
 }
 
 export interface VariableSymbol extends Symbol {

@@ -64,14 +64,20 @@ export class SemanticAnalyzer {
     }
 
     visitFuncStatement(statement: Ast.FuncStatement) {
-        const { name, parameters, returnType, body } = statement
+        const { parameters, returnType /* TODO: validate return type */, body } = statement
     
         // Create a new scope for the function
         this.symbolTable.enterScope()
     
         // Add function parameters to the symbol table
-        for (const param of parameters) {
-            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index: 0, reason: VariableReason.parameter } as VariableSymbol)
+        for (const [index, param] of parameters.entries()) {
+            this.symbolTable.define({
+                type: SymbolType.Variable,
+                name: param.name.value,
+                dataType: param.dataType,
+                index,
+                reason: VariableReason.Parameter
+            } as VariableSymbol)
         }
     
         // Visit the function body
@@ -210,7 +216,7 @@ export class SemanticAnalyzer {
                 return functionInfo.returnType
             }
             default:
-                throw new Error('Placeholder')
+                throw new Error('Invalid symbol type')
         } 
     }
 }

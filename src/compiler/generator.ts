@@ -155,7 +155,13 @@ export class CodeGenerator {
         const finalType = this.semanticAnalyzer.visitLetStatement(statement)
 
         const index = this.symbolTable.currentScopeLastIndex()
-        this.symbolTable.define({ type: SymbolType.Variable, name: name.value, dataType: finalType, index, reason: VariableReason.declaration } as VariableSymbol)
+        this.symbolTable.define({
+            type: SymbolType.Variable,
+            name: name.value,
+            dataType: finalType,
+            index,
+            reason: VariableReason.Declaration
+        } as VariableSymbol)
         
         return this.module.local.set(index, initExpr)
     }
@@ -169,7 +175,13 @@ export class CodeGenerator {
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
-            this.symbolTable.define({ type: SymbolType.Variable, name: param.name.value, dataType: param.dataType, index, reason: VariableReason.parameter } as VariableSymbol)
+            this.symbolTable.define({
+                type: SymbolType.Variable,
+                name: param.name.value,
+                dataType: param.dataType,
+                index,
+                reason: VariableReason.Parameter
+            } as VariableSymbol)
         }
 
         // handle return type
@@ -184,7 +196,7 @@ export class CodeGenerator {
         for (const [_name, value] of this.symbolTable.last().symbols) {
             switch (value.type) {
                 case SymbolType.Variable:
-                    if ((value as VariableSymbol).reason === VariableReason.parameter) {
+                    if ((value as VariableSymbol).reason === VariableReason.Declaration) {
                         vars.push(getWasmType((value as VariableSymbol).dataType))
                     }
             }
@@ -275,7 +287,6 @@ export class CodeGenerator {
             default:
                 return this.module.call('__print_primitive', [val], binaryen.none)
         }
-
     }
 
     private visitExpressionStatement(statement: Ast.ExpressionStatement): binaryen.ExpressionRef {
