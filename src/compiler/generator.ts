@@ -6,7 +6,7 @@ import * as Ast from '../parser/ast.ts'
 import { TokenType } from '../lexer/token.ts'
 import { DataType } from '../datatype/mod.ts'
 import { getWasmType } from './utils.ts'
-import { FunctionSymbol, StringLiteralSymbol, StructSymbol, SymbolTable, SymbolType, VariableReason, VariableSymbol } from './symbolTable.ts'
+import { FunctionSymbol, StringLiteralSymbol, SymbolTable, SymbolType, VariableReason, VariableSymbol } from './symbolTable.ts'
 import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 
 export class CodeGenerator {
@@ -105,9 +105,6 @@ export class CodeGenerator {
     private visitProgram(program: Ast.Program): binaryen.ExpressionRef[] {
         const statements: binaryen.ExportRef[] = []
         for (const statement of program.statements) {
-            if (statement.type === AstType.StructDeclaration) {
-                continue
-            }
             if (statement.type !== AstType.FuncStatement) {
                 throw new Error(`Invalid statement outside of function at line ${statement.location.start.line}`)
             }
@@ -331,14 +328,8 @@ export class CodeGenerator {
                 const args = expression.arguments.map(arg => this.visitExpression(arg))
                 return this.module.call(name, args, getWasmType(functionInfo.returnType))
             }
-            case SymbolType.Struct: {
-                const structSymbol = symbol as StructSymbol
-                const args = expression.arguments.map(arg => this.visitExpression(arg))
-                this.memoryOffset += structSymbol.size
-                return this.module.call(`__newStruct_${structSymbol.name}`, args, binaryen.i32)
-            }
             default:
-                throw new Error('Placeholder')
+                throw new Error(`Invalid function symbol type: ${symbol.type}`)
         }
 
     }
