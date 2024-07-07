@@ -7,17 +7,15 @@ export enum SymbolType {
     StringLiteral = 'stringLiteral'
 }
 
-export interface Symbol {
-    type: SymbolType
-    name: string
-}
+export type Symbol = VariableSymbol | FunctionSymbol | StructSymbol | StringLiteralSymbol
 
 export enum VariableReason {
     Declaration = 'declaration',
     Parameter = 'parameter',
 }
 
-export interface VariableSymbol extends Symbol {
+export interface VariableSymbol {
+    name: string
     type: SymbolType.Variable
     dataType: DataType
     instanceOf?: string
@@ -25,20 +23,21 @@ export interface VariableSymbol extends Symbol {
     reason: VariableReason
 }
 
-export interface StructSymbol extends Symbol {
+export interface StructSymbol {
     type: SymbolType.Struct
     name: string
     members: Map<string, DataType>
     size: number
 }
 
-export interface FunctionSymbol extends Symbol {
+export interface FunctionSymbol {
+    name: string
     type: SymbolType.Function
     params: DataType[]
     returnType: DataType
 }
 
-export interface StringLiteralSymbol extends Symbol {
+export interface StringLiteralSymbol {
     type: SymbolType.StringLiteral
     value: string
     offset?: number
@@ -47,7 +46,7 @@ export interface StringLiteralSymbol extends Symbol {
 class Scope {
     symbols: Map<string, Symbol> = new Map()
 
-    define(symbol: Symbol) {
+    define(symbol: VariableSymbol) {
         this.symbols.set(symbol.name, symbol)
     }
 
@@ -87,14 +86,14 @@ export class SymbolTable {
         switch (symbol.type) {
             case SymbolType.Variable: {
                 const currentScope = this.scopes[this.scopes.length - 1]
-                currentScope.define(symbol)
+                currentScope.define(symbol as VariableSymbol)
                 break
             }
             case SymbolType.StringLiteral: {
                 const strSymbol = symbol as StringLiteralSymbol
                 if (!this.stringLiterals.has(strSymbol.value)) {
                     const value = strSymbol.value
-                    this.stringLiterals.set(strSymbol.value, this.segmentOffset )
+                    this.stringLiterals.set(strSymbol.value, this.segmentOffset)
 
                     const strBytes = new TextEncoder().encode(value)
                     const lengthBytes = new Uint8Array(4)
@@ -114,7 +113,7 @@ export class SymbolTable {
                 break
             }
             case SymbolType.Function: {
-                this.topLevel.set(symbol.name, symbol)
+                this.topLevel.set((symbol as FunctionSymbol).name, symbol)
             }
         }
     }
@@ -122,11 +121,9 @@ export class SymbolTable {
     lookup(symbolType: SymbolType, name: string): Symbol | undefined {
         switch (symbolType) {
             case SymbolType.StringLiteral: {
-                const offset = this.stringLiterals.get(name)
                 return {
-                    name: `_str_${offset}`,
                     value: name,
-                    offset
+                    offset: this.stringLiterals.get(name)
                 } as StringLiteralSymbol
             }
             case SymbolType.Variable:

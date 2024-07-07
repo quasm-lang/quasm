@@ -43,7 +43,6 @@ export class CodeGenerator {
         try {
             this.module.setFeatures(binaryen.Features.All)
             this.prepareStringSegments()
-            this.module.setMemory(1, 16, 'memory', this.segment)
             
             // First pass: Collect function declarations
             this.collectFirstPass(node as Ast.Program)
@@ -73,6 +72,8 @@ export class CodeGenerator {
                 passive: false
             })
         }
+
+        this.module.setMemory(1, 16, 'memory', this.segment)
     }
 
     private collectFirstPass(program: Ast.Program) {
