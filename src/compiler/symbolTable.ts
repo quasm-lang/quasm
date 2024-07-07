@@ -74,12 +74,12 @@ export class SymbolTable {
         return this.scopes.pop()
     }
 
-    last() {
+    currentScope(): Scope {
         return this.scopes[this.scopes.length-1]
     }
 
     currentScopeLastIndex(): number {
-        return this.last().size()
+        return this.currentScope().size()
     }
 
     define(symbol: Symbol) {
@@ -127,7 +127,13 @@ export class SymbolTable {
                 } as StringLiteralSymbol
             }
             case SymbolType.Variable:
-                return this.last().lookup(name)
+                for (let i = this.scopes.length - 1; i >= 0; i--) {
+                    const symbol = this.scopes[i].lookup(name)
+                    if (symbol) {
+                        return symbol
+                    }
+                }
+                break
             case SymbolType.Function:
                 return this.topLevel.get(name)
         }

@@ -178,7 +178,7 @@ export class CodeGenerator {
 
         // handles declared variables in the body
         const vars: binaryen.ExpressionRef[] = []
-        for (const [_name, value] of this.symbolTable.last().symbols) {
+        for (const [_name, value] of this.symbolTable.currentScope().symbols) {
             switch (value.type) {
                 case SymbolType.Variable:
                     if ((value as VariableSymbol).reason === VariableReason.Declaration) {
