@@ -231,7 +231,7 @@ export class CodeGenerator {
 
     private visitIfStatement(statement: Ast.IfStatement): binaryen.ExpressionRef {
         const condition = this.visitExpression(statement.condition)
-        const consequent = statement.consequent.statements.map(statement => this.visitStatement(statement))
+        const consequent = statement.body.statements.map(statement => this.visitStatement(statement))
 
         // TODO: possibly nest the if blocks to achieve if-else blocks
         let alternate: binaryen.ExpressionRef[] = []

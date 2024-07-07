@@ -100,7 +100,7 @@ export interface StructDeclaration extends Statement {
 export interface IfStatement extends Statement {
     type: AstType.IfStatement
     condition: Expression
-    consequent: BlockStatement
+    body: BlockStatement
     alternate?: IfStatement | BlockStatement
 }
 

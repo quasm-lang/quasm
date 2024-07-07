@@ -21,19 +21,23 @@ export function parseWhileStatement(parser: Parser): Ast.WhileStatement {
 export function parseIfStatement(parser: Parser): Ast.IfStatement {
     parser.match(TokenType.If)
     const condition = parseExpression(parser)
-    const consequent = parseBlockStatement(parser)
+    const body = parseBlockStatement(parser)
 
-    let alternate: Ast.BlockStatement | undefined
+    let alternate: Ast.IfStatement | Ast.BlockStatement | undefined
     if (parser.eq(TokenType.Else)) {
         parser.match(TokenType.Else)
         
-        alternate = parseBlockStatement(parser)
+        if (parser.eq(TokenType.If)) {
+            alternate = parseIfStatement(parser)
+        } else {
+            alternate = parseBlockStatement(parser)
+        }
     }
     
     return {
         type: AstType.IfStatement,
         condition,
-        consequent,
+        body,
         alternate,
         location: parser.getLocation()
     }
