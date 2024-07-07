@@ -80,7 +80,7 @@ function compileAndRun(src: string) {
     const wasmInstance = new WebAssembly.Instance(wasmModule, {
         env: {
             __print_primitive: (value: number) => {
-                console.log(value)
+                console.log(`${value}`)
             },
             __print_str: (ptr: number) => {
                 const memory = wasmInstance.exports.memory as WebAssembly.Memory
@@ -93,7 +93,6 @@ function compileAndRun(src: string) {
         },
     })
 
-    // console.log('>')
     const main = wasmInstance.exports.main as CallableFunction
     main()
 
