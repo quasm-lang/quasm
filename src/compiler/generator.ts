@@ -66,26 +66,13 @@ export class CodeGenerator {
     }
 
     private prepareStringSegments() {
-        let currentOffset = 0;
-        for (const value of this.symbolTable.getStringLiterals()) {
-            const strBytes = new TextEncoder().encode(value)
-            const lengthBytes = new Uint8Array(4)
-            new DataView(lengthBytes.buffer).setUint32(0, strBytes.length, true)
-            
-            const fullData = new Uint8Array(4 + strBytes.length)
-            fullData.set(lengthBytes)
-            fullData.set(strBytes, 4)
-
+        for (const segment of this.symbolTable.segment) {
             this.segment.push({
-                offset: this.module.i32.const(currentOffset),
-                data: fullData,
+                offset: this.module.i32.const(segment.offset),
+                data: segment.data,
                 passive: false
             })
-
-            this.symbolTable.updateStringLiteralOffset(value, currentOffset)
-            currentOffset += fullData.length
         }
-        this.memoryOffset = currentOffset
     }
 
     private collectFirstPass(program: Ast.Program) {

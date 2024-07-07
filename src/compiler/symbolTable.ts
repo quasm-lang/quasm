@@ -64,6 +64,8 @@ export class SymbolTable {
     private topLevel: Map<string, Symbol> = new Map()
     private scopes: Scope[] = [new Scope()]
     private stringLiterals: Map<string, number> = new Map()
+    private segmentOffset = 0
+    public segment: { offset: number, data: Uint8Array }[] = []
 
     enterScope() {
         this.scopes.push(new Scope())
@@ -90,7 +92,25 @@ export class SymbolTable {
             }
             case SymbolType.StringLiteral: {
                 const strSymbol = symbol as StringLiteralSymbol
-                this.stringLiterals.set(strSymbol.value, strSymbol.offset ?? -1)
+                if (!this.stringLiterals.has(strSymbol.value)) {
+                    const value = strSymbol.value
+                    this.stringLiterals.set(strSymbol.value, this.segmentOffset )
+
+                    const strBytes = new TextEncoder().encode(value)
+                    const lengthBytes = new Uint8Array(4)
+                    new DataView(lengthBytes.buffer).setUint32(0, strBytes.length, true)
+
+                    const fullData = new Uint8Array(4 + strBytes.length)
+                    fullData.set(lengthBytes)
+                    fullData.set(strBytes, 4)
+
+                    this.segment.push({
+                        offset: this.segmentOffset,
+                        data: fullData
+                    })
+
+                    this.segmentOffset += fullData.length
+                }
                 break
             }
             case SymbolType.Function: {
@@ -106,7 +126,7 @@ export class SymbolTable {
                 return {
                     name: `_str_${offset}`,
                     value: name,
-                    offset: this.stringLiterals.get(name)
+                    offset
                 } as StringLiteralSymbol
             }
             case SymbolType.Variable:
@@ -114,13 +134,5 @@ export class SymbolTable {
             case SymbolType.Function:
                 return this.topLevel.get(name)
         }
-    }
-
-    getStringLiterals(): string[] {
-        return Array.from(this.stringLiterals.keys())
-    }
-
-    updateStringLiteralOffset(value: string, offset: number) {
-        this.stringLiterals.set(value, offset)
     }
 }
