@@ -125,28 +125,25 @@ export class CodeGenerator {
     } 
 
     private visitLetStatement(statement: Ast.LetStatement): binaryen.ExpressionRef {
-        const { name, value } = statement.spec
+        const { name, dataType, value } = statement.spec
         
-        let initExpr: binaryen.ExpressionRef
+        const initExpr = this.visitExpression(value)
 
-        if (value) {
-            initExpr = this.visitExpression(value)
-            // inferredType = this.inferDataType(value)
-        } else {
-            initExpr = this.module.i32.const(0) // Initialize to zero if no value is provided
+        if (!dataType) {
+            throw new Error(`Type inference failed for variable ${name.value}`)
         }
-        
-        // const index = this.symbolTable.currentScopeLastIndex()
-        const finalType = this.semanticAnalyzer.visitLetStatement(statement)
 
-        const index = this.symbolTable.currentScopeLastIndex()
         this.symbolTable.define({
             type: SymbolType.Variable,
             name: name.value,
-            dataType: finalType,
-            index,
+            dataType,
             reason: VariableReason.Declaration
         } as VariableSymbol)
+
+        const index = this.symbolTable.getIndex(name.value)
+        if (index === undefined) {
+            throw new Error(`Failed to get index for variable ${name.value}`)
+        }
         
         return this.module.local.set(index, initExpr)
     }
@@ -156,7 +153,7 @@ export class CodeGenerator {
 
         // handle parameters
         const params = []
-        this.symbolTable.enterScope()
+        this.symbolTable.enterFunc()
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(getWasmType(param.dataType))
@@ -177,15 +174,8 @@ export class CodeGenerator {
         const block = this.module.block(null, statements)
 
         // handles declared variables in the body
-        const vars: binaryen.ExpressionRef[] = []
-        for (const [_name, value] of this.symbolTable.currentScope().symbols) {
-            switch (value.type) {
-                case SymbolType.Variable:
-                    if ((value as VariableSymbol).reason === VariableReason.Declaration) {
-                        vars.push(getWasmType((value as VariableSymbol).dataType))
-                    }
-            }
-        }
+        const allVars = this.symbolTable.exitFunc()
+        const vars: binaryen.Type[] = allVars.map(v => getWasmType(v.dataType))
         
         const wasmFunc = this.module.addFunction(
             name,
@@ -231,7 +221,9 @@ export class CodeGenerator {
 
     private visitIfStatement(statement: Ast.IfStatement): binaryen.ExpressionRef {
         const condition = this.visitExpression(statement.condition)
-        const consequent = statement.body.statements.map(statement => this.visitStatement(statement))
+        this.symbolTable.enterScope()
+        const body = statement.body.statements.map(statement => this.visitStatement(statement))
+        this.symbolTable.exitScope()
 
         // TODO: possibly nest the if blocks to achieve if-else blocks
         let alternate: binaryen.ExpressionRef[] = []
@@ -241,7 +233,7 @@ export class CodeGenerator {
 
         return this.module.if(
             condition,
-            this.module.block(null, consequent),
+            this.module.block(null, body),
             alternate.length > 0 ? this.module.block(null, alternate) : undefined
         )
     }

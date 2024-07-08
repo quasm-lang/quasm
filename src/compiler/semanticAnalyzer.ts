@@ -35,6 +35,9 @@ export class SemanticAnalyzer {
             case AstType.AssignmentStatement:
                 this.visitAssignmentStatement(statement as Ast.AssignmentStatement)
                 break
+            case AstType.IfStatement:
+                this.visitIfStatement(statement as Ast.IfStatement)
+                break
             case AstType.ExpressionStatement:
                 this.visitExpressionStatement(statement as Ast.ExpressionStatement)
                 break
@@ -48,17 +51,21 @@ export class SemanticAnalyzer {
             throw new Error(`Illegal let declaration!`)
         }
     
-        let inferredType: DataType | undefined
-    
-        if (value) {
-            inferredType = this.visitExpression(value)
-        }
-    
-        const finalType = dataType || inferredType || DataType.none
-    
-        if (value && inferredType && dataType && inferredType !== dataType) {
+        const inferredType = this.visitExpression(value)
+
+        if (dataType && inferredType !== dataType) {
             throw new Error(`Type mismatch: Expected ${dataType}, but got ${inferredType} for variable '${name.value}'`)
         }
+
+        const finalType = dataType || inferredType
+        statement.spec.dataType = finalType
+
+        this.symbolTable.define({
+            type: SymbolType.Variable,
+            name: name.value,
+            dataType: finalType,
+            reason: VariableReason.Declaration
+        } as VariableSymbol)
 
         return finalType
     }
@@ -67,7 +74,7 @@ export class SemanticAnalyzer {
         const { parameters, returnType /* TODO: validate return type */, body } = statement
     
         // Create a new scope for the function
-        this.symbolTable.enterScope()
+        this.symbolTable.enterFunc()
     
         // Add function parameters to the symbol table
         for (const [index, param] of parameters.entries()) {
@@ -97,7 +104,7 @@ export class SemanticAnalyzer {
         // }
     
         // Exit the function scope
-        this.symbolTable.exitScope()
+        this.symbolTable.exitFunc()
     }
 
     visitReturnStatement(statement: Ast.ReturnStatement) {
@@ -122,6 +129,31 @@ export class SemanticAnalyzer {
                 }
                 break
             }
+        }
+    }
+
+    visitIfStatement(statement: Ast.IfStatement) {
+        const conditionType = this.visitExpression(statement.condition)
+        if (conditionType !== DataType.i32) {
+            throw new Error(`Condition in if statement must be of type i32, got ${conditionType}`)
+        }
+
+        this.symbolTable.enterScope()
+        for (const bodyStatement of statement.body.statements) {
+            this.visitStatement(bodyStatement)
+        }
+        this.symbolTable.exitScope()
+
+        if (statement.alternate) {
+            this.symbolTable.enterScope()
+            if (statement.alternate.type === AstType.IfStatement) {
+                this.visitIfStatement(statement.alternate as Ast.IfStatement)
+            } else {
+                for (const altStatement of (statement.alternate as Ast.BlockStatement).statements) {
+                    this.visitStatement(altStatement)
+                }
+            }
+            this.symbolTable.exitScope()
         }
     }
 

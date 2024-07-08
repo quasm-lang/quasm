@@ -151,7 +151,7 @@ export interface Spec extends Node {
     type: AstType.Spec
     name: Identifier
     dataType?: DataType
-    value?: Expression
+    value: Expression
 }
 
 export interface IntegerLiteral extends Expression {

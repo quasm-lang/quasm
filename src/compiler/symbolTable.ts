@@ -61,7 +61,10 @@ class Scope {
 
 export class SymbolTable {
     private topLevel: Map<string, Symbol> = new Map()
-    private scopes: Scope[] = [new Scope()]
+    private scopes: Scope[] = []
+    private currentFunctionVariables: VariableSymbol[] = []
+    private index = 0 // variable index $0, $1, $2,...
+
     private stringLiterals: Map<string, number> = new Map()
     private segmentOffset = 0
     public segment: { offset: number, data: Uint8Array }[] = []
@@ -74,19 +77,35 @@ export class SymbolTable {
         return this.scopes.pop()
     }
 
+    enterFunc() {
+        this.enterScope()
+        this.currentFunctionVariables = []
+        this.index = 0
+    }
+
+    exitFunc(): VariableSymbol[] {
+        this.exitScope()
+        return this.currentFunctionVariables
+    }
+
     currentScope(): Scope {
         return this.scopes[this.scopes.length-1]
     }
 
-    currentScopeLastIndex(): number {
-        return this.currentScope().size()
+    getIndex(name: string): number | undefined {
+        const symbol = this.lookup(SymbolType.Variable, name)
+        return symbol ? (symbol as VariableSymbol).index : undefined
     }
 
     define(symbol: Symbol) {
         switch (symbol.type) {
             case SymbolType.Variable: {
-                const currentScope = this.scopes[this.scopes.length - 1]
-                currentScope.define(symbol as VariableSymbol)
+                const varSymbol = symbol as VariableSymbol
+                varSymbol.index = this.index++
+                this.currentScope().define(varSymbol)
+                if (symbol.reason === VariableReason.Declaration) {
+                    this.currentFunctionVariables.push(symbol as VariableSymbol)
+                }
                 break
             }
             case SymbolType.StringLiteral: {
@@ -137,5 +156,5 @@ export class SymbolTable {
             case SymbolType.Function:
                 return this.topLevel.get(name)
         }
-    }
+    } 
 }

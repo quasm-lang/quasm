@@ -11,7 +11,6 @@ export function parseLetStatement(parser: Parser): Ast.LetStatement {
     
     const name = parseIdentifier(parser)
     let dataType: DataType | undefined
-    let value: Ast.Expression | undefined
 
     if (parser.eq(TokenType.Colon)) { // Type exists
         parser.match(TokenType.Colon)
@@ -20,11 +19,8 @@ export function parseLetStatement(parser: Parser): Ast.LetStatement {
         dataType = dataTypeToken.literal
     }
     
-
-    if (parser.eq(TokenType.Assignment)) {
-        parser.match(TokenType.Assignment)
-        value = parseExpression(parser)
-    }
+    parser.match(TokenType.Assignment)
+    const value = parseExpression(parser)
 
     parser.match(TokenType.Semicolon)
 
