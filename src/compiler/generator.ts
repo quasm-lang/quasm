@@ -221,20 +221,27 @@ export class CodeGenerator {
 
     private visitIfStatement(statement: Ast.IfStatement): binaryen.ExpressionRef {
         const condition = this.visitExpression(statement.condition)
+
         this.symbolTable.enterScope()
         const body = statement.body.statements.map(statement => this.visitStatement(statement))
         this.symbolTable.exitScope()
 
-        // TODO: possibly nest the if blocks to achieve if-else blocks
-        let alternate: binaryen.ExpressionRef[] = []
+        let alternate: binaryen.ExpressionRef | undefined
         if (statement.alternate) {
-            alternate = (statement.alternate as Ast.BlockStatement).statements.map(statement => this.visitStatement(statement))
+            this.symbolTable.enterScope()
+            if (statement.alternate.type === AstType.IfStatement) { // else if block
+                alternate = this.visitIfStatement(statement.alternate as Ast.IfStatement)
+            } else {
+                const elseStatements = (statement.alternate as Ast.BlockStatement).statements.map(stmt => this.visitStatement(stmt))
+                alternate = this.module.block(null, elseStatements)
+            }
+            this.symbolTable.exitScope()
         }
 
         return this.module.if(
             condition,
             this.module.block(null, body),
-            alternate.length > 0 ? this.module.block(null, alternate) : undefined
+            alternate
         )
     }
 
