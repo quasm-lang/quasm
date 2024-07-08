@@ -38,6 +38,9 @@ export class SemanticAnalyzer {
             case AstType.IfStatement:
                 this.visitIfStatement(statement as Ast.IfStatement)
                 break
+            case AstType.BlockStatement:
+                this.visitWhileStatement(statement as Ast.WhileStatement)
+                break
             case AstType.ExpressionStatement:
                 this.visitExpressionStatement(statement as Ast.ExpressionStatement)
                 break
