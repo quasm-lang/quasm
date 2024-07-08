@@ -139,8 +139,8 @@ export class SemanticAnalyzer {
         }
 
         this.symbolTable.enterScope()
-        for (const bodyStatement of statement.body.statements) {
-            this.visitStatement(bodyStatement)
+        for (const stmt of statement.body.statements) {
+            this.visitStatement(stmt)
         }
         this.symbolTable.exitScope()
 
@@ -149,12 +149,25 @@ export class SemanticAnalyzer {
             if (statement.alternate.type === AstType.IfStatement) {
                 this.visitIfStatement(statement.alternate as Ast.IfStatement)
             } else {
-                for (const altStatement of (statement.alternate as Ast.BlockStatement).statements) {
-                    this.visitStatement(altStatement)
+                for (const stmt of (statement.alternate as Ast.BlockStatement).statements) {
+                    this.visitStatement(stmt)
                 }
             }
             this.symbolTable.exitScope()
         }
+    }
+
+    visitWhileStatement(statement: Ast.WhileStatement) {
+        const conditionType = this.visitExpression(statement.condition)
+        if (conditionType !== DataType.i32) {
+            throw new Error(`Condition in while statement must be of type i32, got ${conditionType}`)
+        }
+
+        this.symbolTable.enterScope()
+        for (const stmt of statement.body.statements) {
+            this.visitStatement(stmt)
+        }
+        this.symbolTable.exitScope()
     }
 
     visitExpressionStatement(statement: Ast.ExpressionStatement) {
