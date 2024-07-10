@@ -21,7 +21,7 @@ import {
     parsePrintStatement
 } from './statements/mod.ts'
 import { parseExpression } from './expressions/mod.ts'
-import { SymbolTable } from '../compiler/symbolTable.ts'
+import { StringLiteralSymbol, SymbolTable, SymbolType } from '../compiler/symbolTable.ts'
 
 export class Parser {
     curToken: Token
@@ -154,5 +154,44 @@ export class Parser {
         }
 
         throw new Error('Parser error: Unexpected token after export.')
+    }
+
+    parseIntegerLiteral(): Ast.IntegerLiteral {
+        return {
+            type: AstType.IntegerLiteral,
+            value: parseInt(this.consume().literal),
+            location: this.getLocation()
+        }
+    }
+    
+    parseFloatLiteral(): Ast.FloatLiteral {
+        return {
+            type: AstType.FloatLiteral,
+            value: parseFloat(this.consume().literal),
+            location: this.getLocation()
+        }
+    }
+    
+    parseStringLiteral(): Ast.StringLiteral {
+        const value = this.consume().literal
+        this.symbolTable.define({
+            type: SymbolType.StringLiteral,
+            name: `_str_${value}`,
+            value
+        } as StringLiteralSymbol)
+        
+        return {
+            type: AstType.StringLiteral,
+            value,
+            location: this.getLocation()
+        }
+    }
+    
+    parseIdentifier(): Ast.Identifier {
+        return {
+            type: AstType.Identifier,
+            value: this.match(TokenType.Identifier).literal,
+            location: this.getLocation()
+        }
     }
 }

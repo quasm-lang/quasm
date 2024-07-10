@@ -2,7 +2,6 @@ import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
 import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
-import { parseFloatLiteral, parseIdentifier, parseIntegerLiteral, parseStringLiteral } from './core.ts'
 
 function getPrecedence(type: TokenType): number {
     switch (type) {
@@ -40,11 +39,11 @@ export function parseExpression(parser: Parser, precedence = 0): Ast.Expression 
 export function parsePrefixExpression(parser: Parser): Ast.Expression {
     switch (parser.curToken.type) {
         case TokenType.Integer:
-            return parseIntegerLiteral(parser)
+            return parser.parseIntegerLiteral()
         case TokenType.Float:
-            return parseFloatLiteral(parser)
+            return parser.parseFloatLiteral()
         case TokenType.String:
-            return parseStringLiteral(parser)
+            return parser.parseStringLiteral()
         case TokenType.Identifier:
             return parseIdentifierOrCallExpression(parser)
         case TokenType.Minus:
@@ -71,7 +70,7 @@ export function parseInfixExpression(parser: Parser, left: Ast.Expression): Ast.
             return parseCallExpression(parser, left as Ast.Identifier)
         case TokenType.Dot: {
             parser.match(TokenType.Dot)
-            const member = parseIdentifier(parser)
+            const member = parser.parseIdentifier()
             return {
                 type: AstType.MemberAccessExpression,
                 base: left,
@@ -85,7 +84,7 @@ export function parseInfixExpression(parser: Parser, left: Ast.Expression): Ast.
 }
 
 function parseIdentifierOrCallExpression(parser: Parser): Ast.Expression {
-    const identifier = parseIdentifier(parser)
+    const identifier = parser.parseIdentifier()
 
     if (parser.eq(TokenType.LeftParen)) {
         return parseCallExpression(parser, identifier)
@@ -154,7 +153,7 @@ export function parseFields(parser: Parser, delimiter: TokenType | null, closing
     const parameters: Ast.Field[] = []
 
     while (!parser.eq(closingToken)) {
-        const name = parseIdentifier(parser)
+        const name = parser.parseIdentifier()
         parser.match(TokenType.Colon)
         const dataTypeToken = parser.matchDataType()
 

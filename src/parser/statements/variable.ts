@@ -1,7 +1,6 @@
 import { Parser } from '../mod.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { DataType } from '../../datatype/mod.ts'
-import { parseIdentifier } from '../expressions/core.ts'
 import { parseExpression } from '../expressions/mod.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
@@ -9,7 +8,7 @@ import * as Ast from '../ast.ts'
 export function parseLetStatement(parser: Parser): Ast.LetStatement {
     parser.match(TokenType.Let)
     
-    const name = parseIdentifier(parser)
+    const name = parser.parseIdentifier()
     let dataType: DataType | undefined
 
     if (parser.eq(TokenType.Colon)) { // Type exists

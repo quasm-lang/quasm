@@ -4,12 +4,11 @@ import * as Ast from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { DataType } from '../../datatype/mod.ts'
 import { parseExpression, parseFields } from '../expressions/mod.ts'
-import { parseIdentifier } from '../expressions/core.ts'
 import { parseBlockStatement } from './mod.ts'
 
 export function parseFuncStatement(parser: Parser): Ast.FuncStatement {
     parser.match(TokenType.Func)
-    const name = parseIdentifier(parser)
+    const name = parser.parseIdentifier()
     parser.match(TokenType.LeftParen)
     const parameters = parseFields(parser, TokenType.Comma, TokenType.RightParen)
     parser.match(TokenType.RightParen)
