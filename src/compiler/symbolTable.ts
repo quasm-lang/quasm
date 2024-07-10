@@ -61,6 +61,7 @@ class Scope {
 
 export class SymbolTable {
     private topLevel: Map<string, Symbol> = new Map()
+
     private scopes: Scope[] = []
     private currentFunctionVariables: VariableSymbol[] = []
     private index = 0 // variable index $0, $1, $2,...

@@ -73,8 +73,8 @@ export class SemanticAnalyzer {
         return finalType
     }
 
-    visitFuncStatement(statement: Ast.FuncStatement) {
-        const { parameters, returnType /* TODO: validate return type */, body } = statement
+    visitFuncStatement(func: Ast.FuncStatement) {
+        const { parameters, returnType /* TODO: validate return type */, body } = func
     
         // Create a new scope for the function
         this.symbolTable.enterFunc()

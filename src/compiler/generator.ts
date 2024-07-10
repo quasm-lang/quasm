@@ -12,18 +12,25 @@ import { SemanticAnalyzer } from './semanticAnalyzer.ts'
 export class CodeGenerator {
     private module: binaryen.Module
     private semanticAnalyzer: SemanticAnalyzer
-    private memoryOffset = 0
-    private segment: binaryen.MemorySegment[] = []
+    private segment: binaryen.MemorySegment[] = [] 
 
     constructor(private symbolTable: SymbolTable) {
         this.module = new binaryen.Module()
         this.semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
         
         this.module.addFunctionImport(
-            '__print_primitive',
+            '__print_i32',
             'env',
             '__print_primitive',
             binaryen.i32,
+            binaryen.none
+        )
+
+        this.module.addFunctionImport(
+            '__print_f32',
+            'env',
+            '__print_primitive',
+            binaryen.f32,
             binaryen.none
         )
         
@@ -53,8 +60,6 @@ export class CodeGenerator {
             
             // Third pass: Generate WebAssembly code
             this.visitProgram(node as Ast.Program)
-            
-            this.module.autoDrop()
         } catch (err) {
             const error = err as Error
             console.log(error)
@@ -268,8 +273,12 @@ export class CodeGenerator {
         switch (dataType) {
             case DataType.string:
                 return this.module.call('__print_str', [val], binaryen.none)
+            case DataType.i32:
+                return this.module.call('__print_i32', [val], binaryen.none)
+            case DataType.f32:
+                return this.module.call('__print_f32', [val], binaryen.none)
             default:
-                return this.module.call('__print_primitive', [val], binaryen.none)
+                throw new Error(`Invalid print statement: ${dataType}`)
         }
     }
 
@@ -311,9 +320,10 @@ export class CodeGenerator {
 
         switch (symbol.type) {
             case SymbolType.Function: {
-                const functionInfo = symbol as FunctionSymbol
+                const funcSymbol = symbol as FunctionSymbol
                 const args = expression.arguments.map(arg => this.visitExpression(arg))
-                return this.module.call(name, args, getWasmType(functionInfo.returnType))
+                const returnType = getWasmType(funcSymbol.returnType)
+                return this.module.call(name, args, returnType)
             }
             default:
                 throw new Error(`Invalid function symbol type: ${symbol.type}`)
