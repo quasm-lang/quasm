@@ -96,6 +96,7 @@ export const keywords: Record<string, TokenType> = {
     'f32': TokenType.DataType,
     'f64': TokenType.DataType,
     'none': TokenType.DataType,
+    'string': TokenType.DataType,
     'let': TokenType.Let,
     'func': TokenType.Func,
     'return': TokenType.Return,
