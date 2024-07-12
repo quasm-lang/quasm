@@ -211,7 +211,7 @@ export class SemanticAnalyzer {
     }
 
     visitFloatLiteral(_float: Ast.FloatLiteral): DataType {
-        return DataType.f32
+        return DataType.f64
     }
 
     visitStringLiteral(_str: Ast.StringLiteral): DataType {
@@ -232,7 +232,7 @@ export class SemanticAnalyzer {
     visitUnaryExpression(expression: Ast.UnaryExpression): DataType {
         const rightType = this.visitExpression(expression.right)
 
-        if (expression.operator === TokenType.Minus && rightType !== DataType.i32 && rightType !== DataType.f32) {
+        if (expression.operator === TokenType.Minus && rightType !== DataType.i32 && rightType !== DataType.f64) {
             throw new Error(`Invalid unary operator '-' for type ${rightType}`)
         }
 

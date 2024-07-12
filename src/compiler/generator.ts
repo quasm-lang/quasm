@@ -27,10 +27,10 @@ export class CodeGenerator {
         )
 
         this.module.addFunctionImport(
-            '__print_f32',
+            '__print_f64',
             'env',
             '__print_primitive',
-            binaryen.f32,
+            binaryen.f64,
             binaryen.none
         )
         
@@ -38,7 +38,7 @@ export class CodeGenerator {
             '__print_str',
             'env',
             '__print_str',
-            binaryen.createType([binaryen.i32]),
+            binaryen.i32,
             binaryen.none
         )
     }
@@ -275,8 +275,8 @@ export class CodeGenerator {
                 return this.module.call('__print_str', [val], binaryen.none)
             case DataType.i32:
                 return this.module.call('__print_i32', [val], binaryen.none)
-            case DataType.f32:
-                return this.module.call('__print_f32', [val], binaryen.none)
+            case DataType.f64:
+                return this.module.call('__print_f64', [val], binaryen.none)
             default:
                 throw new Error(`Invalid print statement: ${dataType}`)
         }
@@ -354,26 +354,26 @@ export class CodeGenerator {
         let convertedRight = right
 
         if (leftType !== rightType) {
-            if (leftType === binaryen.i32 && rightType === binaryen.f32) {
-                convertedLeft = this.module.f32.convert_s.i32(left)
-            } else if (leftType === binaryen.f32 && rightType === binaryen.i32) {
-                convertedRight = this.module.f32.convert_s.i32(right)
+            if (leftType === binaryen.i32 && rightType === binaryen.f64) {
+                convertedLeft = this.module.f64.convert_s.i32(left)
+            } else if (leftType === binaryen.f64 && rightType === binaryen.i32) {
+                convertedRight = this.module.f64.convert_s.i32(right)
             } else {
                 throw new Error(`Type ${leftType} and ${rightType} are not compatible for binary expression`)
             }
         }
     
-        const resultType = leftType === binaryen.f32 || rightType === binaryen.f32 ? binaryen.f32 : binaryen.i32
+        const resultType = leftType === binaryen.f64 || rightType === binaryen.f64 ? binaryen.f64 : binaryen.i32
     
         switch (node.operator) {
             case TokenType.Plus:
-                return resultType === binaryen.f32 ? this.module.f32.add(convertedLeft, convertedRight) : this.module.i32.add(convertedLeft, convertedRight)
+                return resultType === binaryen.f64 ? this.module.f64.add(convertedLeft, convertedRight) : this.module.i32.add(convertedLeft, convertedRight)
             case TokenType.Minus:
-                return resultType === binaryen.f32 ? this.module.f32.sub(convertedLeft, convertedRight) : this.module.i32.sub(convertedLeft, convertedRight)
+                return resultType === binaryen.f64 ? this.module.f64.sub(convertedLeft, convertedRight) : this.module.i32.sub(convertedLeft, convertedRight)
             case TokenType.Asterisk:
-                return resultType === binaryen.f32 ? this.module.f32.mul(convertedLeft, convertedRight) : this.module.i32.mul(convertedLeft, convertedRight)
+                return resultType === binaryen.f64 ? this.module.f64.mul(convertedLeft, convertedRight) : this.module.i32.mul(convertedLeft, convertedRight)
             case TokenType.Slash:
-                return resultType === binaryen.f32 ? this.module.f32.div(convertedLeft, convertedRight) : this.module.i32.div_s(convertedLeft, convertedRight)
+                return resultType === binaryen.f64 ? this.module.f64.div(convertedLeft, convertedRight) : this.module.i32.div_s(convertedLeft, convertedRight)
             case TokenType.GreaterThan:
                 return this.module.i32.gt_s(left, right)
             case TokenType.LessThan:
@@ -391,7 +391,7 @@ export class CodeGenerator {
     
     private visitNumerical(node: Ast.IntegerLiteral | Ast.FloatLiteral): binaryen.ExpressionRef {
         if (node.type === AstType.FloatLiteral) 
-            return this.module.f32.const(node.value)
+            return this.module.f64.const(node.value)
         return this.module.i32.const(node.value)
     }
 
