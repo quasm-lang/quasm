@@ -15,6 +15,10 @@ export function emit(src: string): binaryen.Module {
     const lexer = new Lexer(src)
     const parser = new Parser(lexer, symbolTable)
     const ast = parser.parseProgram()
+    if (debug) {
+        ensureDirSync('./debug')
+        Deno.writeTextFileSync('./debug/ast.json', JSON.stringify(ast, null, 2))
+    }
 
     const codeGen = new CodeGenerator(symbolTable)
     const module = codeGen.visit(ast)
