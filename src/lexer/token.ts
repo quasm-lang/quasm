@@ -92,8 +92,6 @@ export const multiCharTokenList: Record<string, TokenType> = {
 // Keywords
 export const keywords: Record<string, TokenType> = {
     'i32': TokenType.DataType,
-    'i64': TokenType.DataType,
-    'f32': TokenType.DataType,
     'f64': TokenType.DataType,
     'none': TokenType.DataType,
     'string': TokenType.DataType,
