@@ -51,14 +51,11 @@ export class CodeGenerator {
             this.module.setFeatures(binaryen.Features.All)
             this.prepareStringSegments()
             
-            // First pass: Collect function declarations
-            this.collectFirstPass(node as Ast.Program)
-            
-            // Second pass: Semantic Analyzer
+            // Analyze semantics
             const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
             semanticAnalyzer.check(node as Ast.Program)
             
-            // Third pass: Generate WebAssembly code
+            // Generate WebAssembly code
             this.visitProgram(node as Ast.Program)
         } catch (err) {
             const error = err as Error
@@ -79,20 +76,6 @@ export class CodeGenerator {
         }
 
         this.module.setMemory(1, 16, 'memory', this.segment)
-    }
-
-    private collectFirstPass(program: Ast.Program) {
-        for (const statement of program.statements) {
-            if (statement.type === AstType.FuncStatement) {
-                const func = statement as Ast.FuncStatement
-                const name = func.name.value
-                const params = func.parameters.map(param => param.dataType)
-                const returnType = func.returnType
-
-                // Add the function information to the symbol table
-                this.symbolTable.define({ type: SymbolType.Function, name, params, returnType } as FunctionSymbol)
-            }
-        }
     }
 
     private visitProgram(program: Ast.Program): binaryen.ExpressionRef[] {

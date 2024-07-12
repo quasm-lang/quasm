@@ -5,6 +5,7 @@ import { TokenType } from '../../lexer/token.ts'
 import { DataType } from '../../datatype/mod.ts'
 import { parseExpression, parseFields } from '../expressions/mod.ts'
 import { parseBlockStatement } from './mod.ts'
+import { FunctionSymbol, SymbolType } from '../../compiler/symbolTable.ts'
 
 export function parseFuncStatement(parser: Parser): Ast.FuncStatement {
     parser.match(TokenType.Func)
@@ -21,6 +22,14 @@ export function parseFuncStatement(parser: Parser): Ast.FuncStatement {
     }
 
     const block = parseBlockStatement(parser)
+    
+    // Define function in symbol table
+    parser.symbolTable.define({
+        type: SymbolType.Function,
+        name: name.value,
+        params: parameters.map(param => param.dataType),
+        returnType
+    } as FunctionSymbol)
 
     return {
         type: AstType.FuncStatement,
