@@ -50,19 +50,20 @@ export class CodeGenerator {
         try {
             this.module.setFeatures(binaryen.Features.All)
             this.prepareStringSegments()
-            
+
             // Analyze semantics
             const semanticAnalyzer = new SemanticAnalyzer(this.symbolTable)
             semanticAnalyzer.check(node as Ast.Program)
             
             // Generate WebAssembly code
-            this.visitProgram(node as Ast.Program)
+            this.visitProgram(node as Ast.Program) 
         } catch (err) {
             const error = err as Error
             console.log(error)
             Deno.exit(1)
         }
         
+        this.module.autoDrop()
         return this.module
     }
 
