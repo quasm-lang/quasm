@@ -1,30 +1,35 @@
-import { Parser } from '../mod.ts'
+import { Parser } from '../parser.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { DataType } from '../../datatype/mod.ts'
-import { parseExpression, parseFields } from '../expressions/mod.ts'
-import { parseBlockStatement } from './mod.ts'
 import { FunctionSymbol, SymbolType } from '../../compiler/symbolTable.ts'
 
-export function parseFuncStatement(parser: Parser): Ast.FuncStatement {
-    parser.match(TokenType.Func)
-    const name = parser.parseIdentifier()
-    parser.match(TokenType.LeftParen)
-    const parameters = parseFields(parser, TokenType.Comma, TokenType.RightParen)
-    parser.match(TokenType.RightParen)
+declare module '../parser.ts' {
+    interface Parser {
+        parseFuncStatement(): Ast.FuncStatement
+        parseReturnStatement(): Ast.ReturnStatement
+    }
+}
+
+Parser.prototype.parseFuncStatement = function () {
+    this.match(TokenType.Func)
+    const name = this.parseIdentifier()
+    this.match(TokenType.LeftParen)
+    const parameters = this.parseFields(TokenType.Comma, TokenType.RightParen)
+    this.match(TokenType.RightParen)
 
     let returnType: DataType = DataType.none // Default return type
-    if (parser.eq(TokenType.RightArrow)) {   // scenario in which type exists
-        parser.match(TokenType.RightArrow)
-        const returnToken = parser.matchDataType()
+    if (this.eq(TokenType.RightArrow)) {     // scenario in which type exists
+        this.match(TokenType.RightArrow)
+        const returnToken = this.matchDataType()
         returnType = returnToken.literal
     }
 
-    const block = parseBlockStatement(parser)
+    const block = this.parseBlockStatement()
     
     // Define function in symbol table
-    parser.symbolTable.define({
+    this.symbolTable.define({
         type: SymbolType.Function,
         name: name.value,
         params: parameters.map(param => param.dataType),
@@ -38,18 +43,18 @@ export function parseFuncStatement(parser: Parser): Ast.FuncStatement {
         returnType,
         body: block,
         exported: false,
-        location: parser.getLocation()
+        location: this.getLocation()
     }
 }
 
-export function parseReturnStatement(parser: Parser): Ast.ReturnStatement {
-    parser.match(TokenType.Return)
-    const value = parseExpression(parser)
-    parser.match(TokenType.Semicolon)
+Parser.prototype.parseReturnStatement = function () {
+    this.match(TokenType.Return)
+    const value = this.parseExpression(0)
+    this.match(TokenType.Semicolon)
 
     return {
         type: AstType.ReturnStatement,
         value,
-        location: parser.getLocation()
+        location: this.getLocation()
     }
 }

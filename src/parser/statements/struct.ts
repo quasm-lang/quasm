@@ -1,14 +1,13 @@
-import { Parser } from '../mod.ts'
+import { Parser } from '../parser.ts'
 import { TokenType } from '../../lexer/token.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
-import { parseFields } from "../expressions/mod.ts";
 
 export function parseStructStatement(parser: Parser): Ast.StructDeclaration {
     parser.match(TokenType.Struct)
     const name = parser.parseIdentifier()
     parser.match(TokenType.LeftBrace)
-    const fields = parseFields(parser, null, TokenType.RightBrace)
+    const fields = parser.parseFields(null, TokenType.RightBrace)
     parser.match(TokenType.RightBrace)
 
     return {

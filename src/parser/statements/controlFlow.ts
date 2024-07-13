@@ -1,36 +1,41 @@
-import { Parser } from '../mod.ts'
+import { Parser } from '../parser.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
-import { parseExpression } from '../expressions/mod.ts'
-import { parseBlockStatement } from './mod.ts' 
 
-export function parseWhileStatement(parser: Parser): Ast.WhileStatement {
-    parser.match(TokenType.While)
-    const condition = parseExpression(parser)
-    const body = parseBlockStatement(parser)
+declare module '../parser.ts' {
+    interface Parser {
+        parseWhileStatement(): Ast.WhileStatement
+        parseIfStatement(): Ast.IfStatement
+    }
+}
+
+Parser.prototype.parseWhileStatement = function () {
+    this.match(TokenType.While)
+    const condition = this.parseExpression(0)
+    const body = this.parseBlockStatement()
 
     return {
         type: AstType.WhileStatement,
         condition,
         body,
-        location: parser.getLocation()
+        location: this.getLocation()
     }
 }
 
-export function parseIfStatement(parser: Parser): Ast.IfStatement {
-    parser.match(TokenType.If)
-    const condition = parseExpression(parser)
-    const body = parseBlockStatement(parser)
+Parser.prototype.parseIfStatement = function () {
+    this.match(TokenType.If)
+    const condition = this.parseExpression(0)
+    const body = this.parseBlockStatement()
 
     let alternate: Ast.IfStatement | Ast.BlockStatement | undefined
-    if (parser.eq(TokenType.Else)) {
-        parser.match(TokenType.Else)
+    if (this.eq(TokenType.Else)) {
+        this.match(TokenType.Else)
         
-        if (parser.eq(TokenType.If)) {
-            alternate = parseIfStatement(parser)
+        if (this.eq(TokenType.If)) {
+            alternate = this.parseIfStatement()
         } else {
-            alternate = parseBlockStatement(parser)
+            alternate = this.parseBlockStatement()
         }
     }
     
@@ -39,6 +44,6 @@ export function parseIfStatement(parser: Parser): Ast.IfStatement {
         condition,
         body,
         alternate,
-        location: parser.getLocation()
+        location: this.getLocation()
     }
 }
