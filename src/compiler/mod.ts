@@ -9,12 +9,12 @@ import { binaryen } from '../deps.ts'
 
 export function emit(src: string): binaryen.Module {
     const debug = getOptions().debug
-    
     const symbolTable = new SymbolTable()
     
     const lexer = new Lexer(src)
     const parser = new Parser(lexer, symbolTable)
     const ast = parser.parseProgram()
+
     if (debug) {
         ensureDirSync('./debug')
         Deno.writeTextFileSync('./debug/ast.json', JSON.stringify(ast, null, 2))
@@ -31,7 +31,7 @@ export function emit(src: string): binaryen.Module {
 
 
     if (!module.validate()) {
-        console.error("Validation error: The module is invalid.")
+        console.error('Validation error: The module is invalid.')
         Deno.exit(1)
     }
 

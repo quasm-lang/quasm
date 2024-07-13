@@ -237,16 +237,16 @@ export class CodeGenerator {
         const condition = this.visitExpression(statement.condition)
         const body = statement.body.statements.map(statement => this.visitStatement(statement))
         
-        const loopBlock = this.module.loop("loop", this.module.block(null, [
+        const loopBlock = this.module.loop('loop', this.module.block(null, [
             // Check the condition: if it's false, break out of the loop to the 'while' block
             this.module.br_if('while', this.module.i32.eqz(condition)),
             // Loop body
             this.module.block(null, body),
             // Continue at the top of the loop body
-            this.module.br("loop")
+            this.module.br('loop')
         ]))
 
-        return this.module.block("while", [loopBlock], binaryen.none)
+        return this.module.block('while', [loopBlock], binaryen.none)
     }
 
     private visitPrintStatement(statement: Ast.PrintStatement): binaryen.ExpressionRef {
