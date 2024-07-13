@@ -19,7 +19,7 @@ export class Parser {
     }
 
     private eof() {
-        return this.curToken.type == TokenType.EOF
+        return this.curToken.type === TokenType.EOF
     }
 
     consume(): Token {
@@ -29,7 +29,7 @@ export class Parser {
     }
 
     eq(type: TokenType): boolean {
-        return this.curToken.type == type
+        return this.curToken.type === type
     }
 
     peekEq(token: TokenType): boolean {
