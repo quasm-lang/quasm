@@ -6,6 +6,8 @@ import {
     multiCharTokenList
 } from './token.ts'
 
+import { getOptions } from '../options.ts'
+
 function isWhitespace(char: string): boolean {
     return /\s+/.test(char) // skips all whitespaces
     //return /[ \t]/.test(char)
@@ -181,7 +183,13 @@ export class Lexer {
             }
         }
         
-        // console.log(token)
+        if (getOptions().debug) {
+            Deno.writeTextFileSync('debug/tokens.txt', 
+                `│ ${token.type.padEnd(10)} │ ${token.line.toString().padStart(3)}:${token.column.toString().padStart(3)} │ ${token.literal}${token.type === TokenType.EOF ? '' : '\n'}`, 
+                {append: true}
+            )
+            
+        }
         return token
     }
 

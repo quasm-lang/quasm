@@ -1,3 +1,5 @@
+import { emptyDirSync } from 'std/fs/mod.ts'
+
 type Options = {
     debug: boolean
 }
@@ -7,6 +9,9 @@ let options: Options = {
 }
 
 export function setOptions(newOptions: Options) {
+    if (newOptions.debug) {
+        emptyDirSync('./debug')
+    }
     options = newOptions
 }
 

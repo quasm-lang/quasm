@@ -67,9 +67,8 @@ function compileAndRun(src: string) {
     main()
 
     if (getOptions().debug) {
-        console.log('Memory:')
         const memory = wasmInstance.exports.memory as WebAssembly.Memory
-        console.log(memory.buffer)
+        Deno.writeFileSync('debug/memory.hex', new Uint8Array(memory.buffer))
     }
 }
 

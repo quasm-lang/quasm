@@ -4,7 +4,6 @@ import { CodeGenerator } from './generator.ts'
 import { SymbolTable } from '../compiler/symbolTable.ts'
 import { getOptions } from '../options.ts'
 
-import { ensureDirSync } from 'std/fs/mod.ts'
 import { binaryen } from '../deps.ts'
 
 export function emit(src: string): binaryen.Module {
@@ -16,7 +15,6 @@ export function emit(src: string): binaryen.Module {
     const ast = parser.parseProgram()
 
     if (debug) {
-        ensureDirSync('./debug')
         Deno.writeTextFileSync('./debug/ast.json', JSON.stringify(ast, null, 2))
     }
 
@@ -24,7 +22,6 @@ export function emit(src: string): binaryen.Module {
     const module = codeGen.visit(ast)
 
     if (debug) {
-        ensureDirSync('./debug')
         Deno.writeTextFileSync('./debug/ast.json', JSON.stringify(ast, null, 2))
         Deno.writeFileSync('./debug/output.wat', new TextEncoder().encode(module.emitText()))
     }
