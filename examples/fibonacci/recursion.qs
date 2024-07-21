@@ -6,7 +6,7 @@ func fibonacci(n: i32) -> i32 {
 }
 
 func main() {
-    let n = 10;
+    let n = 20;
     let i = 0;
     
     while i <= n {
