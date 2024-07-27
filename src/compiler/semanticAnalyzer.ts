@@ -95,16 +95,8 @@ export class SemanticAnalyzer {
             this.visitStatement(bodyStatement)
         }
     
-        // Check the return type of the function
-        // const lastStatement = body.statements[body.statements.length - 1]
-        // if (lastStatement.type === AstType.ReturnStatement) {
-        //     const actualReturnType = this.visitExpression((lastStatement as ReturnStatement).value)
-        //     if (actualReturnType !== returnType) {
-        //         throw new Error(`Type mismatch: Expected return type ${returnType}, but got ${actualReturnType} for function '${name.value}'`)
-        //     }
-        // } else if (returnType !== DataType.none) {
-        //     throw new Error(`Missing return statement for function '${name.value}' with return type ${returnType}`)
-        // }
+        /* TODO: Validate the return type of the function
+                 Has to validate all the existing return in the function */ 
     
         // Exit the function scope
         this.symbolTable.exitFunc()
