@@ -1,25 +1,24 @@
-import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
 import { Parser } from '../mod.ts'
-import { TokenType } from '../../lexer/token.ts'
+import * as Token from '../../lexer/token.ts'
 
 import './core.ts'
 
-const precedenceMap: Partial<Record<TokenType, number>> = {
-    [TokenType.Dot]: 5,
-    [TokenType.Asterisk]: 4,
-    [TokenType.Slash]: 4,
-    [TokenType.Plus]: 3,
-    [TokenType.Minus]: 3,
-    [TokenType.Equality]: 2,
-    [TokenType.LessThan]: 2,
-    [TokenType.GreaterThan]: 2,
-    [TokenType.GreaterThanOrEqual]: 2,
-    [TokenType.LessThanOrEqual]: 2,
-    [TokenType.LeftParen]: 1,
+const precedenceMap: Partial<Record<Token.Type, number>> = {
+    [Token.Type.Dot]: 5,
+    [Token.Type.Asterisk]: 4,
+    [Token.Type.Slash]: 4,
+    [Token.Type.Plus]: 3,
+    [Token.Type.Minus]: 3,
+    [Token.Type.Equality]: 2,
+    [Token.Type.LessThan]: 2,
+    [Token.Type.GreaterThan]: 2,
+    [Token.Type.GreaterThanOrEqual]: 2,
+    [Token.Type.LessThanOrEqual]: 2,
+    [Token.Type.LeftParen]: 1,
 }
 
-function getPrecedence(type: TokenType): number {
+function getPrecedence(type: Token.Type): number {
     return precedenceMap[type] || 0
 }
 
@@ -34,7 +33,7 @@ declare module '../parser.ts' {
         parseBinaryExpression(left: Ast.Expression): Ast.BinaryExpression
         parseCallExpression(identifier: Ast.Identifier): Ast.CallExpression
         parseCallArguments(): Ast.Expression[]
-        parseFields(delimiter: TokenType | null, closingToken: TokenType): Ast.Field[]
+        parseFields(delimiter: Token.Type | null, closingToken: Token.Type): Ast.Field[]
     }
 }
 
@@ -50,17 +49,17 @@ Parser.prototype.parseExpression = function (precedence = 0) {
 
 Parser.prototype.parsePrefixExpression = function () {
     switch (this.curToken.type) {
-        case TokenType.Integer:
+        case Token.Type.Integer:
             return this.parseIntegerLiteral()
-        case TokenType.Float:
+        case Token.Type.Float:
             return this.parseFloatLiteral()
-        case TokenType.String:
+        case Token.Type.String:
             return this.parseStringLiteral()
-        case TokenType.Identifier:
+        case Token.Type.Identifier:
             return this.parseIdentifierOrCallExpression()
-        case TokenType.Minus:
+        case Token.Type.Minus:
             return this.parseUnaryExpression()
-        case TokenType.LeftParen:
+        case Token.Type.LeftParen:
             return this.parseGroupedExpression()
     }
     throw new Error(`Parser error: No prefix found for ${this.curToken.literal}`)
@@ -68,23 +67,23 @@ Parser.prototype.parsePrefixExpression = function () {
 
 Parser.prototype.parseInfixExpression = function (left) {
     switch (this.curToken.type) {
-        case TokenType.Plus:
-        case TokenType.Minus:
-        case TokenType.Asterisk:
-        case TokenType.Slash:
-        case TokenType.GreaterThan:
-        case TokenType.LessThan:
-        case TokenType.Equality:
-        case TokenType.LessThanOrEqual:
-        case TokenType.GreaterThanOrEqual:
+        case Token.Type.Plus:
+        case Token.Type.Minus:
+        case Token.Type.Asterisk:
+        case Token.Type.Slash:
+        case Token.Type.GreaterThan:
+        case Token.Type.LessThan:
+        case Token.Type.Equality:
+        case Token.Type.LessThanOrEqual:
+        case Token.Type.GreaterThanOrEqual:
             return this.parseBinaryExpression(left)
-        case TokenType.LeftParen:
+        case Token.Type.LeftParen:
             return this.parseCallExpression(left as Ast.Identifier)
-        case TokenType.Dot: {
-            this.match(TokenType.Dot)
+        case Token.Type.Dot: {
+            this.match(Token.Type.Dot)
             const member = this.parseIdentifier()
             return {
-                type: AstType.MemberAccessExpression,
+                type: Ast.Type.MemberAccessExpression,
                 base: left,
                 member,
                 location: this.getLocation()
@@ -98,7 +97,7 @@ Parser.prototype.parseInfixExpression = function (left) {
 Parser.prototype.parseIdentifierOrCallExpression = function () {
     const identifier = this.parseIdentifier()
 
-    if (this.eq(TokenType.LeftParen)) {
+    if (this.eq(Token.Type.LeftParen)) {
         return this.parseCallExpression(identifier)
     }
     return identifier
@@ -106,7 +105,7 @@ Parser.prototype.parseIdentifierOrCallExpression = function () {
 
 Parser.prototype.parseUnaryExpression = function () {
     return {
-        type: AstType.UnaryExpression,
+        type: Ast.Type.UnaryExpression,
         operator: this.consume().type,
         right: this.parseExpression(0),
         location: this.getLocation()
@@ -114,9 +113,9 @@ Parser.prototype.parseUnaryExpression = function () {
 }
 
 Parser.prototype.parseGroupedExpression = function() {
-    this.match(TokenType.LeftParen)
+    this.match(Token.Type.LeftParen)
     const expression = this.parseExpression(0)
-    this.match(TokenType.RightParen)
+    this.match(Token.Type.RightParen)
     return expression
 }
 
@@ -126,7 +125,7 @@ Parser.prototype.parseBinaryExpression = function (left) {
     const right = this.parseExpression(precedence)
 
     return {
-        type: AstType.BinaryExpression,
+        type: Ast.Type.BinaryExpression,
         left,
         operator,
         right,
@@ -135,12 +134,12 @@ Parser.prototype.parseBinaryExpression = function (left) {
 }
 
 Parser.prototype.parseCallExpression = function (identifier) {
-    this.match(TokenType.LeftParen)
+    this.match(Token.Type.LeftParen)
     const args: Ast.Expression[] = this.parseCallArguments()
-    this.match(TokenType.RightParen)
+    this.match(Token.Type.RightParen)
 
     return {
-        type: AstType.CallExpression,
+        type: Ast.Type.CallExpression,
         callee: identifier,
         arguments: args,
         location: this.getLocation()
@@ -150,11 +149,11 @@ Parser.prototype.parseCallExpression = function (identifier) {
 Parser.prototype.parseCallArguments = function () {
     const args: Ast.Expression[] = []
 
-    while (!this.eq(TokenType.RightParen)) {
+    while (!this.eq(Token.Type.RightParen)) {
         args.push(this.parseExpression(0))
 
-        if (!this.eq(TokenType.RightParen)) {
-            this.match(TokenType.Comma)
+        if (!this.eq(Token.Type.RightParen)) {
+            this.match(Token.Type.Comma)
         }
     }
 
@@ -166,11 +165,11 @@ Parser.prototype.parseFields = function (delimiter, closingToken) {
 
     while (!this.eq(closingToken)) {
         const name = this.parseIdentifier()
-        this.match(TokenType.Colon)
+        this.match(Token.Type.Colon)
         const dataType = this.parseIdentifierType()
 
         const param: Ast.Field = {
-            type: AstType.Field,
+            type: Ast.Type.Field,
             name: name,
             dataType,
             location: this.getLocation()

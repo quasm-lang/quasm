@@ -1,8 +1,7 @@
 import { Parser } from '../parser.ts'
 import * as Ast from '../ast.ts'
-import { AstType } from '../ast.ts'
-import { StringLiteralSymbol, SymbolType } from '../../symbolTable.ts'
-import { TokenType } from '../../lexer/token.ts'
+import * as Symbol from '../../symbolTable.ts'
+import * as Token from '../../lexer/token.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -16,7 +15,7 @@ declare module '../parser.ts' {
 
 Parser.prototype.parseIntegerLiteral = function () {
     return {
-        type: AstType.IntegerLiteral,
+        type: Ast.Type.IntegerLiteral,
         value: parseInt(this.consume().literal),
         location: this.getLocation()
     }
@@ -24,7 +23,7 @@ Parser.prototype.parseIntegerLiteral = function () {
 
 Parser.prototype.parseFloatLiteral = function () {
     return {
-        type: AstType.FloatLiteral,
+        type: Ast.Type.FloatLiteral,
         value: parseFloat(this.consume().literal),
         location: this.getLocation()
     }
@@ -33,13 +32,13 @@ Parser.prototype.parseFloatLiteral = function () {
 Parser.prototype.parseStringLiteral = function () {
     const value = this.consume().literal
     this.symbolTable.define({
-        type: SymbolType.StringLiteral,
+        type: Symbol.Type.StringLiteral,
         name: `_str_${value}`,
         value
-    } as StringLiteralSymbol)
+    } as Symbol.StringLiteral)
     
     return {
-        type: AstType.StringLiteral,
+        type: Ast.Type.StringLiteral,
         value,
         location: this.getLocation()
     }
@@ -47,16 +46,16 @@ Parser.prototype.parseStringLiteral = function () {
 
 Parser.prototype.parseIdentifier = function () {
     return {
-        type: AstType.Identifier,
-        value: this.match(TokenType.Identifier).literal,
+        type: Ast.Type.Identifier,
+        value: this.match(Token.Type.Identifier).literal,
         location: this.getLocation()
     }
 }
 
 Parser.prototype.parseIdentifierType = function () {
     return {
-        type: AstType.IdentifierType,
-        value: this.match(TokenType.IdentifierType).literal,
+        type: Ast.Type.IdentifierType,
+        value: this.match(Token.Type.IdentifierType).literal,
         location: this.getLocation()
     }
 }
@@ -67,15 +66,15 @@ Parser.prototype.parseIdentifierType = function () {
 //     dimensions: number;
 // }
 // export interface Field extends Node {
-//     type: AstType.Field;
+//     type: Ast.Type.Field;
 //     name: Identifier;
 //     dataType: Identifier | ArrayType;
 // }
 // function parseDataType(): Identifier | ArrayType {
 //     const baseType = this.parseIdentifier();
-//     if (this.eq(TokenType.LeftBracket)) {
-//         this.match(TokenType.LeftBracket);
-//         this.match(TokenType.RightBracket);
+//     if (this.eq(Token.Type.LeftBracket)) {
+//         this.match(Token.Type.LeftBracket);
+//         this.match(Token.Type.RightBracket);
 //         return { baseType, dimensions: 1 };
 //     }
 //     return baseType;

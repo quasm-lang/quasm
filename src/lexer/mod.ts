@@ -1,10 +1,4 @@
-import {
-    Token,
-    TokenType,
-    keywords,
-    tokenList,
-    multiCharTokenList
-} from './token.ts'
+import * as Token from './token.ts'
 
 import { getOptions } from '../options.ts'
 
@@ -23,8 +17,8 @@ function isAlpha(char: string): boolean {
     return /^[A-Za-z_]$/.test(char)
 }
 
-function lookupIdentifier(identifier: string): TokenType {
-    return keywords[identifier] || TokenType.Identifier
+function lookupIdentifier(identifier: string): Token.Type {
+    return Token.keywords[identifier] || Token.Type.Identifier
 }
 
 export class Lexer {
@@ -75,7 +69,7 @@ export class Lexer {
         this.skipWhitespace()
     }
 
-    private newToken(type: TokenType, literal?: string): Token {
+    private newToken(type: Token.Type, literal?: string): Token.Token {
         return {
             type,
             line: this.line,
@@ -93,23 +87,23 @@ export class Lexer {
             this.advance()
         }
 
-        // return this.newToken(TokenType.Integer, number)
+        // return this.newToken(Token.Type.Integer, number)
         return number
     }
 
-    private readDecimal(): Token {
+    private readDecimal(): Token.Token {
         const integer = this.readNumber()
 
         // Now check if the number is decimal
         if (this.current() === '.') {
             this.advance()
             const fraction = this.readNumber()
-            return this.newToken(TokenType.Float, `${integer}.${fraction}`)
+            return this.newToken(Token.Type.Float, `${integer}.${fraction}`)
         }
-        return this.newToken(TokenType.Integer, integer)
+        return this.newToken(Token.Type.Integer, integer)
     }
 
-    private readIdentifier(): Token {
+    private readIdentifier(): Token.Token {
         let literal: string = this.current()
         this.advance()
 
@@ -121,7 +115,7 @@ export class Lexer {
         return this.newToken(lookupIdentifier(literal), literal)
     }
 
-    private readString(): Token {
+    private readString(): Token.Token {
         let literal = ''
         this.advance()
 
@@ -130,18 +124,18 @@ export class Lexer {
             this.advance()
         }
         
-        return this.newToken(TokenType.String, literal)
+        return this.newToken(Token.Type.String, literal)
     }
 
-    private readMultiChar(): Token {
+    private readMultiChar(): Token.Token {
         const chars = this.current() + this.peek(1)
-        const tokenType = multiCharTokenList[chars]
+        const tokenType = Token.multiCharTokenList[chars]
         this.advance() // Consume the second character
         return this.newToken(tokenType, chars)
     }
 
-    nextToken(): Token {
-        let token: Token = this.newToken(TokenType.EOF)
+    nextToken(): Token.Token {
+        let token: Token.Token = this.newToken(Token.Type.EOF)
 
         while (!this.eof()) {
             this.skipWhitespace()
@@ -167,13 +161,13 @@ export class Lexer {
                 this.advance()
                 break
             }
-            else if (this.current()+this.peek(1) in multiCharTokenList) {
+            else if (this.current()+this.peek(1) in Token.multiCharTokenList) {
                 token = this.readMultiChar()
                 this.advance()
                 break
             }
-            else if (this.current() in tokenList) {
-                token = this.newToken(tokenList[this.current()], this.current())
+            else if (this.current() in Token.tokenList) {
+                token = this.newToken(Token.tokenList[this.current()], this.current())
                 this.advance()
                 break
             }
@@ -185,7 +179,7 @@ export class Lexer {
         
         if (getOptions().debug) {
             Deno.writeTextFileSync('debug/tokens.txt', 
-                `│ ${token.type.padEnd(10)} │ ${token.line.toString().padStart(3)}:${token.column.toString().padStart(3)} │ ${token.literal}${token.type === TokenType.EOF ? '' : '\n'}`, 
+                `│ ${token.type.padEnd(10)} │ ${token.line.toString().padStart(3)}:${token.column.toString().padStart(3)} │ ${token.literal}${token.type === Token.Type.EOF ? '' : '\n'}`, 
                 {append: true}
             )
             
@@ -193,7 +187,7 @@ export class Lexer {
         return token
     }
 
-    peekToken(): Token {
+    peekToken(): Token.Token {
         const currentIndex = this.index
         const currentLine = this.line
         const currentColumn = this.column

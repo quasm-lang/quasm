@@ -1,37 +1,37 @@
 import { DataType } from './datatype/mod.ts'
 
-export enum SymbolType {
+export enum Type {
     Variable = 'variable',
     Function = 'function',
     Struct = 'struct',
     StringLiteral = 'stringLiteral'
 }
 
-export type Symbol = VariableSymbol | FunctionSymbol | StringLiteralSymbol
+export type Symbol = Variable | Function | StringLiteral
 
 export enum VariableReason {
     Declaration = 'declaration',
     Parameter = 'parameter',
 }
 
-export interface VariableSymbol {
+export interface Variable {
     name: string
-    type: SymbolType.Variable
+    type: Type.Variable
     dataType: DataType
     instanceOf?: string
     index: number
     reason: VariableReason
 }
 
-export interface FunctionSymbol {
+export interface Function {
     name: string
-    type: SymbolType.Function
+    type: Type.Function
     params: DataType[]
     returnType: DataType
 }
 
-export interface StringLiteralSymbol {
-    type: SymbolType.StringLiteral
+export interface StringLiteral {
+    type: Type.StringLiteral
     value: string
     offset?: number
 }
@@ -39,7 +39,7 @@ export interface StringLiteralSymbol {
 class Scope {
     symbols: Map<string, Symbol> = new Map()
 
-    define(symbol: VariableSymbol) {
+    define(symbol: Variable) {
         this.symbols.set(symbol.name, symbol)
     }
 
@@ -56,7 +56,7 @@ export class SymbolTable {
     private topLevel: Map<string, Symbol> = new Map()
 
     private scopes: Scope[] = []
-    private currentFunctionVariables: VariableSymbol[] = []
+    private currentFunctionVariables: Variable[] = []
     private index = 0 // variable index $0, $1, $2,...
 
     private stringLiterals: Map<string, number> = new Map()
@@ -77,7 +77,7 @@ export class SymbolTable {
         this.index = 0
     }
 
-    exitFunc(): VariableSymbol[] {
+    exitFunc(): Variable[] {
         this.exitScope()
         return this.currentFunctionVariables
     }
@@ -87,23 +87,23 @@ export class SymbolTable {
     }
 
     getIndex(name: string): number | undefined {
-        const symbol = this.lookup(SymbolType.Variable, name)
-        return symbol ? (symbol as VariableSymbol).index : undefined
+        const symbol = this.lookup(Type.Variable, name)
+        return symbol ? (symbol as Variable).index : undefined
     }
 
     define(symbol: Symbol) {
         switch (symbol.type) {
-            case SymbolType.Variable: {
-                const varSymbol = symbol as VariableSymbol
+            case Type.Variable: {
+                const varSymbol = symbol as Variable
                 varSymbol.index = this.index++
                 this.currentScope().define(varSymbol)
                 if (symbol.reason === VariableReason.Declaration) {
-                    this.currentFunctionVariables.push(symbol as VariableSymbol)
+                    this.currentFunctionVariables.push(symbol as Variable)
                 }
                 break
             }
-            case SymbolType.StringLiteral: {
-                const strSymbol = symbol as StringLiteralSymbol
+            case Type.StringLiteral: {
+                const strSymbol = symbol as StringLiteral
                 if (!this.stringLiterals.has(strSymbol.value)) {
                     const value = strSymbol.value
                     this.stringLiterals.set(strSymbol.value, this.segmentOffset)
@@ -125,21 +125,21 @@ export class SymbolTable {
                 }
                 break
             }
-            case SymbolType.Function: {
-                this.topLevel.set((symbol as FunctionSymbol).name, symbol)
+            case Type.Function: {
+                this.topLevel.set((symbol as Function).name, symbol)
             }
         }
     }
 
-    lookup(symbolType: SymbolType, name: string): Symbol | undefined {
+    lookup(symbolType: Type, name: string): Symbol | undefined {
         switch (symbolType) {
-            case SymbolType.StringLiteral: {
+            case Type.StringLiteral: {
                 return {
                     value: name,
                     offset: this.stringLiterals.get(name)
-                } as StringLiteralSymbol
+                } as StringLiteral
             }
-            case SymbolType.Variable:
+            case Type.Variable:
                 for (let i = this.scopes.length - 1; i >= 0; i--) {
                     const symbol = this.scopes[i].lookup(name)
                     if (symbol) {
@@ -147,7 +147,7 @@ export class SymbolTable {
                     }
                 }
                 break
-            case SymbolType.Function:
+            case Type.Function:
                 return this.topLevel.get(name)
         }
     } 

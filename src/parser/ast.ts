@@ -1,11 +1,8 @@
-import {
-    InfixOperator,
-    TokenType
-} from '../lexer/token.ts'
+import * as Token from '../lexer/token.ts'
 
 import { DataType } from '../datatype/mod.ts'
 
-export enum AstType {
+export enum Type {
     Program = 'PROGRAM',
     LetStatement = 'LET_STATEMENT',
     BlockStatement = 'BLOCK_STATEMENT',
@@ -44,7 +41,7 @@ export interface SourceLocation {
 }
 
 export interface Node {
-    type: AstType
+    type: Type
     location: SourceLocation
 }
 
@@ -52,28 +49,28 @@ export interface Statement extends Node {}
 export interface Expression extends Node {}
 
 export interface Program extends Node {
-    type: AstType.Program
+    type: Type.Program
     statements: Statement[]
 }
 
 // Statements
 export interface ExpressionStatement extends Statement {
-    type: AstType.ExpressionStatement
+    type: Type.ExpressionStatement
     expression: Expression
 }
 
 export interface BlockStatement extends Statement {
-    type: AstType.BlockStatement
+    type: Type.BlockStatement
     statements: Statement[]
 }
 
 export interface LetStatement extends Statement {
-    type: AstType.LetStatement
+    type: Type.LetStatement
     spec: Spec
 }
 
 export interface FuncStatement extends Statement {
-    type: AstType.FuncStatement
+    type: Type.FuncStatement
     name: Identifier
     parameters: Field[]
     returnType: DataType
@@ -82,100 +79,100 @@ export interface FuncStatement extends Statement {
 }
 
 export interface ReturnStatement extends Statement {
-    type: AstType.ReturnStatement
+    type: Type.ReturnStatement
     value: Expression
 }
 
 export interface AssignmentStatement extends Statement {
-    type: AstType.AssignmentStatement
+    type: Type.AssignmentStatement
     left: Expression
     value: Expression
 }
 
 export interface StructDeclaration extends Statement {
-    type: AstType.StructDeclaration
+    type: Type.StructDeclaration
     name: Identifier
     fields: Field[]
 }
 
 export interface IfStatement extends Statement {
-    type: AstType.IfStatement
+    type: Type.IfStatement
     condition: Expression
     body: BlockStatement
     alternate?: IfStatement | BlockStatement
 }
 
 export interface WhileStatement extends Statement {
-    type: AstType.WhileStatement
+    type: Type.WhileStatement
     condition: Expression
     body: BlockStatement
 }
 
 export interface PrintStatement extends Statement {
-    type: AstType.PrintStatement
+    type: Type.PrintStatement
     expression: Expression
 }
 
 // Expressions
 export interface CallExpression extends Expression {
-    type: AstType.CallExpression
+    type: Type.CallExpression
     callee: Identifier
     arguments: Expression[]
 }
 
 export interface UnaryExpression extends Expression {
-    type: AstType.UnaryExpression,
-    operator: TokenType,
+    type: Type.UnaryExpression,
+    operator: Token.Type,
     right: Expression
 }
 
 export interface BinaryExpression extends Expression {
-    type: AstType.BinaryExpression
+    type: Type.BinaryExpression
     left: Expression
-    operator: InfixOperator
+    operator: Token.InfixOperator
     right: Expression
 }
 
 export interface MemberAccessExpression extends Expression {
-    type: AstType.MemberAccessExpression
+    type: Type.MemberAccessExpression
     base: Expression
     member: Identifier
 }
 
 export interface Field extends Node {
-    type: AstType.Field
+    type: Type.Field
     name: Identifier
     dataType: IdentifierType
 }
 
 export interface Spec extends Node {
-    type: AstType.Spec
+    type: Type.Spec
     name: Identifier
     dataType?: DataType
     value: Expression
 }
 
 export interface IntegerLiteral extends Expression {
-    type: AstType.IntegerLiteral
+    type: Type.IntegerLiteral
     value: number
 }
 
 export interface FloatLiteral extends Expression {
-    type: AstType.FloatLiteral
+    type: Type.FloatLiteral
     value: number
 }
 
 export interface StringLiteral extends Expression {
-    type: AstType.StringLiteral
+    type: Type.StringLiteral
     value: string
 }
 
 export interface Identifier extends Expression {
-    type: AstType.Identifier
+    type: Type.Identifier
     value: string
 }
 
 export interface IdentifierType extends Expression {
-    type: AstType.IdentifierType
+    type: Type.IdentifierType
     value: string
 }

@@ -1,4 +1,4 @@
-export enum TokenType {
+export enum Type {
     Integer = 'integer',
     Float = 'float',
     Identifier = 'identifier',
@@ -52,71 +52,71 @@ export enum TokenType {
 }
 
 export interface Token {
-    type: TokenType
+    type: Type
     line: number
     column: number
     literal: string
 }
 
-export const tokenList: Record<string, TokenType> = {
-    '+': TokenType.Plus,
-    '-': TokenType.Minus,
-    '*': TokenType.Asterisk,
-    '/': TokenType.Slash,
-    '!': TokenType.Bang,
-    '(': TokenType.LeftParen,
-    ')': TokenType.RightParen,
-    '{': TokenType.LeftBrace,
-    '}': TokenType.RightBrace,
-    ',': TokenType.Comma,
-    '.': TokenType.Dot,
-    ':': TokenType.Colon,
-    ';': TokenType.Semicolon,
-    '=': TokenType.Assignment,
-    '<': TokenType.LessThan,
-    '>': TokenType.GreaterThan,
+export const tokenList: Record<string, Type> = {
+    '+': Type.Plus,
+    '-': Type.Minus,
+    '*': Type.Asterisk,
+    '/': Type.Slash,
+    '!': Type.Bang,
+    '(': Type.LeftParen,
+    ')': Type.RightParen,
+    '{': Type.LeftBrace,
+    '}': Type.RightBrace,
+    ',': Type.Comma,
+    '.': Type.Dot,
+    ':': Type.Colon,
+    ';': Type.Semicolon,
+    '=': Type.Assignment,
+    '<': Type.LessThan,
+    '>': Type.GreaterThan,
 }
 
-export const multiCharTokenList: Record<string, TokenType> = {
-    '||': TokenType.LogicalOr,
-    '&&': TokenType.LogicalAnd,
-    '->': TokenType.RightArrow,
-    '==': TokenType.Equality,
-    '!=': TokenType.NonEquality,
-    '<=': TokenType.LessThanOrEqual,
-    '>=': TokenType.GreaterThanOrEqual,
+export const multiCharTokenList: Record<string, Type> = {
+    '||': Type.LogicalOr,
+    '&&': Type.LogicalAnd,
+    '->': Type.RightArrow,
+    '==': Type.Equality,
+    '!=': Type.NonEquality,
+    '<=': Type.LessThanOrEqual,
+    '>=': Type.GreaterThanOrEqual,
 }
 
 // Keywords
-export const keywords: Record<string, TokenType> = {
-    'i32': TokenType.IdentifierType,
-    'f64': TokenType.IdentifierType,
-    'none': TokenType.IdentifierType,
-    'string': TokenType.IdentifierType,
-    'let': TokenType.Let,
-    'func': TokenType.Func,
-    'return': TokenType.Return,
-    'true': TokenType.True,
-    'false': TokenType.False,
-    'if': TokenType.If,
-    'else': TokenType.Else,
-    'while': TokenType.While,
-    'struct': TokenType.Struct,
-    'export': TokenType.Export,
-    'global': TokenType.Global,
-    'import': TokenType.Import,
-    'from': TokenType.From,
-    'print': TokenType.Print
+export const keywords: Record<string, Type> = {
+    'i32': Type.IdentifierType,
+    'f64': Type.IdentifierType,
+    'none': Type.IdentifierType,
+    'string': Type.IdentifierType,
+    'let': Type.Let,
+    'func': Type.Func,
+    'return': Type.Return,
+    'true': Type.True,
+    'false': Type.False,
+    'if': Type.If,
+    'else': Type.Else,
+    'while': Type.While,
+    'struct': Type.Struct,
+    'export': Type.Export,
+    'global': Type.Global,
+    'import': Type.Import,
+    'from': Type.From,
+    'print': Type.Print
 }
 
 export type InfixOperator =
-    TokenType.Plus |
-    TokenType.Minus |
-    TokenType.Asterisk |
-    TokenType.Slash |
-    TokenType.GreaterThan |
-    TokenType.LessThan |
-    TokenType.Equality |
-    TokenType.GreaterThanOrEqual |
-    TokenType.LessThanOrEqual |
-    TokenType.Dot
+    Type.Plus |
+    Type.Minus |
+    Type.Asterisk |
+    Type.Slash |
+    Type.GreaterThan |
+    Type.LessThan |
+    Type.Equality |
+    Type.GreaterThanOrEqual |
+    Type.LessThanOrEqual |
+    Type.Dot

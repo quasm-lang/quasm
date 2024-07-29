@@ -1,6 +1,5 @@
 import { Parser } from '../parser.ts'
-import { TokenType } from '../../lexer/token.ts'
-import { AstType } from '../ast.ts'
+import * as Token from '../../lexer/token.ts'
 import * as Ast from '../ast.ts'
 
 declare module '../parser.ts' {
@@ -11,26 +10,26 @@ declare module '../parser.ts' {
 }
 
 Parser.prototype.parseLetStatement = function() {
-    this.match(TokenType.Let)
+    this.match(Token.Type.Let)
     
     const name = this.parseIdentifier()
     let dataType: Ast.IdentifierType | undefined
 
-    if (this.eq(TokenType.Colon)) { // Type exists
-        this.match(TokenType.Colon)
+    if (this.eq(Token.Type.Colon)) { // Type exists
+        this.match(Token.Type.Colon)
 
         dataType = this.parseIdentifierType()
     }
     
-    this.match(TokenType.Assignment)
+    this.match(Token.Type.Assignment)
     const value = this.parseExpression(0)
 
-    this.match(TokenType.Semicolon)
+    this.match(Token.Type.Semicolon)
 
     return {
-        type: Ast.AstType.LetStatement,
+        type: Ast.Type.LetStatement,
         spec: {
-            type: Ast.AstType.Spec,
+            type: Ast.Type.Spec,
             name,
             dataType,
             value,
@@ -41,12 +40,12 @@ Parser.prototype.parseLetStatement = function() {
 }
 
 Parser.prototype.parseAssignmentStatement = function(left) {
-    this.match(TokenType.Assignment)
+    this.match(Token.Type.Assignment)
     const value = this.parseExpression(0)
-    this.match(TokenType.Semicolon)
+    this.match(Token.Type.Semicolon)
 
     return {
-        type: AstType.AssignmentStatement,
+        type: Ast.Type.AssignmentStatement,
         left,
         value,
         location: this.getLocation()

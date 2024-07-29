@@ -1,7 +1,6 @@
 import { Parser } from '../parser.ts'
-import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
-import { TokenType } from '../../lexer/token.ts'
+import * as Token from '../../lexer/token.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -11,12 +10,12 @@ declare module '../parser.ts' {
 }
 
 Parser.prototype.parseWhileStatement = function () {
-    this.match(TokenType.While)
+    this.match(Token.Type.While)
     const condition = this.parseExpression(0)
     const body = this.parseBlockStatement()
 
     return {
-        type: AstType.WhileStatement,
+        type: Ast.Type.WhileStatement,
         condition,
         body,
         location: this.getLocation()
@@ -24,15 +23,15 @@ Parser.prototype.parseWhileStatement = function () {
 }
 
 Parser.prototype.parseIfStatement = function () {
-    this.match(TokenType.If)
+    this.match(Token.Type.If)
     const condition = this.parseExpression(0)
     const body = this.parseBlockStatement()
 
     let alternate: Ast.IfStatement | Ast.BlockStatement | undefined
-    if (this.eq(TokenType.Else)) {
-        this.match(TokenType.Else)
+    if (this.eq(Token.Type.Else)) {
+        this.match(Token.Type.Else)
         
-        if (this.eq(TokenType.If)) {
+        if (this.eq(Token.Type.If)) {
             alternate = this.parseIfStatement()
         } else {
             alternate = this.parseBlockStatement()
@@ -40,7 +39,7 @@ Parser.prototype.parseIfStatement = function () {
     }
     
     return {
-        type: AstType.IfStatement,
+        type: Ast.Type.IfStatement,
         condition,
         body,
         alternate,

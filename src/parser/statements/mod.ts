@@ -1,6 +1,5 @@
 import { Parser } from '../parser.ts'
-import { TokenType } from '../../lexer/token.ts'
-import { AstType } from '../ast.ts'
+import * as Token from '../../lexer/token.ts'
 import * as Ast from '../ast.ts'
 
 import './controlFlow.ts'
@@ -16,48 +15,48 @@ declare module '../parser.ts' {
 }
 
 Parser.prototype.parseExpressionStatement = function (expression) {
-    this.match(TokenType.Semicolon)
+    this.match(Token.Type.Semicolon)
 
-    while (this.eq(TokenType.Semicolon)) {
+    while (this.eq(Token.Type.Semicolon)) {
         this.consume()
     }
 
     return {
-        type: AstType.ExpressionStatement,
+        type: Ast.Type.ExpressionStatement,
         expression,
         location: this.getLocation()
     }
 }
 
 Parser.prototype.parseBlockStatement = function () {
-    this.match(TokenType.LeftBrace)
+    this.match(Token.Type.LeftBrace)
  
     const statements: Ast.Statement[] = []
     
     while (
-        !this.eq(TokenType.RightBrace) &&
-        !this.eq(TokenType.EOF)
+        !this.eq(Token.Type.RightBrace) &&
+        !this.eq(Token.Type.EOF)
     ) {
         const statement = this.parseStatement()
         statements.push(statement)
     }
     
-    this.match(TokenType.RightBrace)
+    this.match(Token.Type.RightBrace)
 
     return {
-        type: AstType.BlockStatement,
+        type: Ast.Type.BlockStatement,
         statements,
         location: this.getLocation()
     }
 }
 
 Parser.prototype.parsePrintStatement = function () {
-    this.match(TokenType.Print)
+    this.match(Token.Type.Print)
     const expression = this.parseExpression(0)
-    this.match(TokenType.Semicolon)
+    this.match(Token.Type.Semicolon)
 
     return {
-        type: AstType.PrintStatement,
+        type: Ast.Type.PrintStatement,
         expression,
         location: this.getLocation()
     }

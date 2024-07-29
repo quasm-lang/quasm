@@ -1,41 +1,37 @@
-import {
-    Token,
-    TokenType
-} from '../lexer/token.ts'
+import * as Token from '../lexer/token.ts'
 
 import { Lexer } from '../lexer/mod.ts'
 
-import { AstType } from './ast.ts'
 import * as Ast from './ast.ts'
 
 import { SymbolTable } from '../symbolTable.ts'
 
 export class Parser {
-    curToken: Token
+    curToken: Token.Token
     
     constructor(private lexer: Lexer, public symbolTable: SymbolTable) {
         this.curToken = this.lexer.nextToken()
     }
 
     private eof() {
-        return this.curToken.type === TokenType.EOF
+        return this.curToken.type === Token.Type.EOF
     }
 
-    consume(): Token {
+    consume(): Token.Token {
         const prev = this.curToken
         this.curToken = this.lexer.nextToken()
         return prev
     }
 
-    eq(type: TokenType): boolean {
+    eq(type: Token.Type): boolean {
         return this.curToken.type === type
     }
 
-    peekEq(token: TokenType): boolean {
+    peekEq(token: Token.Type): boolean {
         return this.lexer.peekToken().type === token
     }
 
-    match(type: TokenType): Token {
+    match(type: Token.Type): Token.Token {
         if (this.eq(type)) {
             return this.consume()
         }
@@ -64,7 +60,7 @@ export class Parser {
             }
     
             return {
-                type: AstType.Program,
+                type: Ast.Type.Program,
                 statements,
                 location: this.getLocation()
             }
@@ -76,23 +72,23 @@ export class Parser {
     }
 
     parseStatement(): Ast.Statement {
-        if (this.eq(TokenType.Export)) {
+        if (this.eq(Token.Type.Export)) {
             return this.parseExport()
-        } else if (this.eq(TokenType.Func)) {
+        } else if (this.eq(Token.Type.Func)) {
             return this.parseFuncStatement()
-        } else if (this.eq(TokenType.Return)) {
+        } else if (this.eq(Token.Type.Return)) {
             return this.parseReturnStatement()
-        } else if (this.eq(TokenType.Let)) {
+        } else if (this.eq(Token.Type.Let)) {
             return this.parseLetStatement()
-        } else if (this.eq(TokenType.If)) {
+        } else if (this.eq(Token.Type.If)) {
             return this.parseIfStatement()
-        } else if (this.eq(TokenType.While)) {
+        } else if (this.eq(Token.Type.While)) {
             return this.parseWhileStatement()
-        } else if (this.eq(TokenType.Print)) {
+        } else if (this.eq(Token.Type.Print)) {
             return this.parsePrintStatement()
         } else {
             const expr = this.parseExpression(0)
-            if (this.eq(TokenType.Assignment)) {
+            if (this.eq(Token.Type.Assignment)) {
                 return this.parseAssignmentStatement(expr)
             } else {
                 return this.parseExpressionStatement(expr)
@@ -102,9 +98,9 @@ export class Parser {
 
     // Misc
     parseExport(): Ast.FuncStatement {
-        this.match(TokenType.Export)
+        this.match(Token.Type.Export)
         
-        if (this.eq(TokenType.Func)) {
+        if (this.eq(Token.Type.Func)) {
             const statement = this.parseFuncStatement()
             statement.exported = true
             return statement

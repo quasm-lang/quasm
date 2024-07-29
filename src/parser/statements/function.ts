@@ -1,9 +1,8 @@
 import { Parser } from '../parser.ts'
-import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
-import { TokenType } from '../../lexer/token.ts'
+import * as Token from '../../lexer/token.ts'
 import * as Type from '../../datatype/mod.ts'
-import { FunctionSymbol, SymbolType } from '../../symbolTable.ts'
+import * as Symbol from '../../symbolTable.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -13,15 +12,15 @@ declare module '../parser.ts' {
 }
 
 Parser.prototype.parseFuncStatement = function () {
-    this.match(TokenType.Func)
+    this.match(Token.Type.Func)
     const name = this.parseIdentifier()
-    this.match(TokenType.LeftParen)
-    const parameters = this.parseFields(TokenType.Comma, TokenType.RightParen)
-    this.match(TokenType.RightParen)
+    this.match(Token.Type.LeftParen)
+    const parameters = this.parseFields(Token.Type.Comma, Token.Type.RightParen)
+    this.match(Token.Type.RightParen)
 
     let returnType: Type.DataType = Type.None // Default return type
-    if (this.eq(TokenType.RightArrow)) {     // scenario in which type exists
-        this.match(TokenType.RightArrow)
+    if (this.eq(Token.Type.RightArrow)) {     // scenario in which type exists
+        this.match(Token.Type.RightArrow)
         const returnToken = this.parseIdentifierType()
         // returnType = { kind: TypeKind[returnToken.value as keyof typeof TypeKind] } as PrimitiveType
         returnType = Type.fromString(returnToken.value)
@@ -31,14 +30,14 @@ Parser.prototype.parseFuncStatement = function () {
     
     // Define function in symbol table
     this.symbolTable.define({
-        type: SymbolType.Function,
+        type: Symbol.Type.Function,
         name: name.value,
         params: parameters.map(param => Type.fromString(param.dataType.value)),
         returnType
-    } as FunctionSymbol)
+    } as Symbol.Function)
 
     return {
-        type: AstType.FuncStatement,
+        type: Ast.Type.FuncStatement,
         name,
         parameters,
         returnType,
@@ -49,12 +48,12 @@ Parser.prototype.parseFuncStatement = function () {
 }
 
 Parser.prototype.parseReturnStatement = function () {
-    this.match(TokenType.Return)
+    this.match(Token.Type.Return)
     const value = this.parseExpression(0)
-    this.match(TokenType.Semicolon)
+    this.match(Token.Type.Semicolon)
 
     return {
-        type: AstType.ReturnStatement,
+        type: Ast.Type.ReturnStatement,
         value,
         location: this.getLocation()
     }
