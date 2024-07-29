@@ -48,7 +48,7 @@ export const i32: PrimitiveType = {
     toWasmType(): binaryen.Type {
         return binaryen.i32
     }
-};
+}
 
 export const f64: PrimitiveType = {
     kind: TypeKind.Primitive,
@@ -57,12 +57,12 @@ export const f64: PrimitiveType = {
         return other.kind === TypeKind.Primitive && (other as PrimitiveType).primitiveKind === PrimitiveKind.f64
     },
     toString(): string {
-        return PrimitiveKind.f64;
+        return PrimitiveKind.f64
     },
     toWasmType(): binaryen.Type {
-        return binaryen.f64;
+        return binaryen.f64
     }
-};
+}
 
 export const String: PrimitiveType = {
     kind: TypeKind.Primitive,
@@ -76,7 +76,7 @@ export const String: PrimitiveType = {
     toWasmType(): binaryen.Type {
         return binaryen.i32
     }
-};
+}
 
 export const None: PrimitiveType = {
     kind: TypeKind.Primitive,
@@ -90,7 +90,7 @@ export const None: PrimitiveType = {
     toWasmType(): binaryen.Type {
         return binaryen.none
     }
-};
+}
 
 export function createStructType(name: string, fields: Map<string, DataType>): StructType {
     return {
@@ -98,17 +98,17 @@ export function createStructType(name: string, fields: Map<string, DataType>): S
         name,
         fields,
         eq(other: DataType): boolean {
-            if (other.kind !== TypeKind.Struct) return false;
-            const otherStruct = other as StructType;
-            if (this.name !== otherStruct.name) return false;
+            if (other.kind !== TypeKind.Struct) return false
+            const otherStruct = other as StructType
+            if (this.name !== otherStruct.name) return false
             // Check field compatibility
             for (const [fieldName, fieldType] of this.fields) {
-                const otherField = otherStruct.fields.get(fieldName);
+                const otherField = otherStruct.fields.get(fieldName)
                 if (!otherField || !fieldType.eq(otherField)) {
-                    return false;
+                    return false
                 }
             }
-            return true;
+            return true
         },
         toString(): string {
             return `struct ${this.name}`
@@ -116,7 +116,7 @@ export function createStructType(name: string, fields: Map<string, DataType>): S
         toWasmType(): binaryen.Type {
             throw new Error('Structs are not supported yet')
         }
-    };
+    }
 }
 
 export function createArrayType(elementType: DataType): ArrayType {
@@ -125,7 +125,7 @@ export function createArrayType(elementType: DataType): ArrayType {
         elementType,
         eq(other: DataType): boolean {
             return other.kind === TypeKind.Array &&
-                   this.elementType.eq((other as ArrayType).elementType);
+                   this.elementType.eq((other as ArrayType).elementType)
         },
         toString(): string {
             return `${this.elementType.toString()}[]`
@@ -133,7 +133,7 @@ export function createArrayType(elementType: DataType): ArrayType {
         toWasmType(): binaryen.Type {
             throw new Error('Arrays are not supported yet')
         }
-    };
+    }
 }
 
 // helper functions

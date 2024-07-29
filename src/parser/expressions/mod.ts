@@ -17,7 +17,7 @@ const precedenceMap: Partial<Record<TokenType, number>> = {
     [TokenType.GreaterThanOrEqual]: 2,
     [TokenType.LessThanOrEqual]: 2,
     [TokenType.LeftParen]: 1,
-};
+}
 
 function getPrecedence(type: TokenType): number {
     return precedenceMap[type] || 0

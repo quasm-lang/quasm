@@ -20,7 +20,7 @@ function isDigit(char: string): boolean {
 
 // Identifier
 function isAlpha(char: string): boolean {
-    return /^[A-Za-z_]$/.test(char);
+    return /^[A-Za-z_]$/.test(char)
 }
 
 function lookupIdentifier(identifier: string): TokenType {
