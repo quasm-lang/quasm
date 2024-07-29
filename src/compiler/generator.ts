@@ -145,18 +145,18 @@ export class CodeGenerator {
         const funcSymbol = this.symbolTable.lookup(SymbolType.Function, name) as FunctionSymbol
 
         for (const [index, param] of func.parameters.entries()) {
-            params.push(Type.getWasmType(funcSymbol.params[index]))
+            params.push(funcSymbol.params[index].toWasmType())
             this.symbolTable.define({
                 type: SymbolType.Variable,
                 name: param.name.value,
-                dataType: { kind: param.dataType.value },
+                dataType: Type.fromString(param.dataType.value),
                 index,
                 reason: VariableReason.Parameter
             } as VariableSymbol)
         }
 
         // handle return type
-        const returnType = Type.getWasmType(func.returnType)
+        const returnType = func.returnType.toWasmType()
 
         // handle body
         const statements = func.body.statements.map(statement => this.visitStatement(statement))
@@ -164,7 +164,7 @@ export class CodeGenerator {
 
         // handles declared variables in the body
         const allVars = this.symbolTable.exitFunc()
-        const vars: binaryen.Type[] = allVars.map(v => Type.getWasmType(v.dataType))
+        const vars: binaryen.Type[] = allVars.map(v => v.dataType.toWasmType())
         
         const wasmFunc = this.module.addFunction(
             name,
@@ -253,14 +253,19 @@ export class CodeGenerator {
     private visitPrintStatement(statement: Ast.PrintStatement): binaryen.ExpressionRef {
         const dataType = this.semanticAnalyzer.visitExpression(statement.expression)
         const val = this.visitExpression(statement.expression)
-
+        
         switch (dataType.kind) {
-            case Type.TypeKind.String:
-                return this.module.call('__print_str', [val], binaryen.none)
-            case Type.TypeKind.i32:
-                return this.module.call('__print_i32', [val], binaryen.none)
-            case Type.TypeKind.f64:
-                return this.module.call('__print_f64', [val], binaryen.none)
+            case Type.TypeKind.Primitive: 
+                switch ((dataType as Type.PrimitiveType).primitiveKind) {
+                    case Type.PrimitiveKind.String:
+                        return this.module.call('__print_str', [val], binaryen.none)
+                    case Type.PrimitiveKind.i32:
+                        return this.module.call('__print_i32', [val], binaryen.none)
+                    case Type.PrimitiveKind.f64:
+                        return this.module.call('__print_f64', [val], binaryen.none)
+                    default:
+                        throw new Error(`Invalid primitive type for print statement: ${(dataType as Type.PrimitiveType).primitiveKind}`)
+                }
             default:
                 throw new Error(`Invalid print statement: ${dataType}`)
         }
@@ -306,7 +311,7 @@ export class CodeGenerator {
             case SymbolType.Function: {
                 const funcSymbol = symbol as FunctionSymbol
                 const args = expression.arguments.map(arg => this.visitExpression(arg))
-                const returnType = Type.getWasmType(funcSymbol.returnType)
+                const returnType = funcSymbol.returnType.toWasmType()
                 return this.module.call(name, args, returnType)
             }
             default:
@@ -395,6 +400,6 @@ export class CodeGenerator {
             throw new Error(`Variable ${identifier.value} not found in scope`)
         }
         
-        return this.module.local.get(variable.index, Type.getWasmType(variable.dataType))
+        return this.module.local.get(variable.index, variable.dataType.toWasmType())
     }
 }

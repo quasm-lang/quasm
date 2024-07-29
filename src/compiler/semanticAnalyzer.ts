@@ -4,7 +4,6 @@ import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, VariableReason
 import { TokenType } from '../lexer/token.ts'
 import * as Type from '../datatype/mod.ts'  
 
-
 export class SemanticAnalyzer {
     constructor(private symbolTable: SymbolTable) {}
 
@@ -75,7 +74,7 @@ export class SemanticAnalyzer {
     }
 
     visitFuncStatement(func: Ast.FuncStatement) {
-        const { parameters, returnType /* TODO: validate return type */, body } = func
+        const { parameters, /* TODO: validate return type */ body } = func
     
         // Create a new scope for the function
         this.symbolTable.enterFunc()
@@ -85,7 +84,7 @@ export class SemanticAnalyzer {
             this.symbolTable.define({
                 type: SymbolType.Variable,
                 name: param.name.value,
-                dataType: { kind: param.dataType.value },
+                dataType: Type.fromString(param.dataType.value),
                 index,
                 reason: VariableReason.Parameter
             } as VariableSymbol)
@@ -130,7 +129,7 @@ export class SemanticAnalyzer {
 
     visitIfStatement(statement: Ast.IfStatement) {
         const conditionType = this.visitExpression(statement.condition)
-        if (conditionType.kind !== Type.TypeKind.i32) {
+        if (!conditionType.eq(Type.i32)) {
             throw new Error(`Condition in if statement must be of type i32, got ${conditionType}`)
         }
 
@@ -155,7 +154,7 @@ export class SemanticAnalyzer {
 
     visitWhileStatement(statement: Ast.WhileStatement) {
         const conditionType = this.visitExpression(statement.condition)
-        if (conditionType.kind !== Type.TypeKind.i32) {
+        if (!conditionType.eq(Type.i32)) {
             throw new Error(`Condition in while statement must be of type i32, got ${conditionType}`)
         }
 
@@ -200,22 +199,22 @@ export class SemanticAnalyzer {
     }
 
     visitIntegerLiteral(_integer: Ast.IntegerLiteral): Type.DataType {
-        return { kind: Type.TypeKind.i32 }
+        return Type.i32
     }
 
     visitFloatLiteral(_float: Ast.FloatLiteral): Type.DataType {
-        return { kind: Type.TypeKind.f64 }
+        return Type.f64
     }
 
     visitStringLiteral(_str: Ast.StringLiteral): Type.DataType {
-        return { kind: Type.TypeKind.String }
+        return Type.String
     }               
 
     visitBinaryExpression(expression: Ast.BinaryExpression): Type.DataType {
         const leftType = this.visitExpression(expression.left)
         const rightType = this.visitExpression(expression.right)
     
-        if (!Type.isEqual(leftType, rightType)) {
+        if (!leftType.eq(rightType)) {
             throw new Error(`Type mismatch: Cannot perform binary operation on types ${leftType} and ${rightType}`)
         }
     
@@ -225,7 +224,7 @@ export class SemanticAnalyzer {
     visitUnaryExpression(expression: Ast.UnaryExpression): Type.DataType {
         const rightType = this.visitExpression(expression.right)
 
-        if (expression.operator === TokenType.Minus && rightType.kind !== Type.TypeKind.i32 && rightType.kind !== Type.TypeKind.f64) {
+        if (expression.operator === TokenType.Minus && !rightType.eq(Type.i32) && !rightType.eq(Type.f64)) {
             throw new Error(`Invalid unary operator '-' for type ${rightType}`)
         }
 
@@ -250,7 +249,7 @@ export class SemanticAnalyzer {
                     const argType = this.visitExpression(expression.arguments[i])
                     const paramType = functionInfo.params[i]
             
-                    if (!Type.isEqual(argType, paramType)) {
+                    if (!argType.eq(paramType)) {
                         throw new Error(`Type mismatch: Argument ${i + 1} of function '${expression.callee.value}' expected type ${paramType}, but got ${argType}`)
                     }
                 }
