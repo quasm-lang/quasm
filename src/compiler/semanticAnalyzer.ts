@@ -1,8 +1,9 @@
 import { AstType } from '../parser/ast.ts'
 import * as Ast from '../parser/ast.ts'
-import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, VariableReason } from './symbolTable.ts'
+import { VariableSymbol, SymbolTable, SymbolType, FunctionSymbol, VariableReason } from '../symbolTable.ts'
 import { TokenType } from '../lexer/token.ts'
-import { DataType } from '../datatype/mod.ts'
+import * as Type from '../datatype/mod.ts'  
+
 
 export class SemanticAnalyzer {
     constructor(private symbolTable: SymbolTable) {}
@@ -47,7 +48,7 @@ export class SemanticAnalyzer {
         }
     }
 
-    visitLetStatement(statement: Ast.LetStatement): DataType {
+    visitLetStatement(statement: Ast.LetStatement): Type.DataType {
         const { name, dataType, value } = statement.spec
 
         if (dataType === undefined && value === undefined) {
@@ -84,7 +85,7 @@ export class SemanticAnalyzer {
             this.symbolTable.define({
                 type: SymbolType.Variable,
                 name: param.name.value,
-                dataType: param.dataType,
+                dataType: { kind: param.dataType.value },
                 index,
                 reason: VariableReason.Parameter
             } as VariableSymbol)
@@ -114,12 +115,12 @@ export class SemanticAnalyzer {
                 const left_ = left as Ast.Identifier
                 const variableType = (this.symbolTable.lookup(SymbolType.Variable, left_.value) as VariableSymbol)?.dataType
                 const valueType = this.visitExpression(value)
-        
+                
                 if (!variableType) {
                     throw new Error(`Undefined variable '${left_.value}'`)
                 }
         
-                if (variableType !== valueType) {
+                if (variableType.kind !== valueType.kind) {
                     throw new Error(`Type mismatch: Cannot assign value of type ${valueType} to variable '${left_.value}' of type ${variableType}`)
                 }
                 break
@@ -129,7 +130,7 @@ export class SemanticAnalyzer {
 
     visitIfStatement(statement: Ast.IfStatement) {
         const conditionType = this.visitExpression(statement.condition)
-        if (conditionType !== DataType.i32) {
+        if (conditionType.kind !== Type.TypeKind.i32) {
             throw new Error(`Condition in if statement must be of type i32, got ${conditionType}`)
         }
 
@@ -141,7 +142,7 @@ export class SemanticAnalyzer {
 
         if (statement.alternate) {
             this.symbolTable.enterScope()
-            if (statement.alternate.type === AstType.IfStatement) {
+            if (statement.alternate.type === AstType.IfStatement) { 
                 this.visitIfStatement(statement.alternate as Ast.IfStatement)
             } else {
                 for (const stmt of (statement.alternate as Ast.BlockStatement).statements) {
@@ -154,7 +155,7 @@ export class SemanticAnalyzer {
 
     visitWhileStatement(statement: Ast.WhileStatement) {
         const conditionType = this.visitExpression(statement.condition)
-        if (conditionType !== DataType.i32) {
+        if (conditionType.kind !== Type.TypeKind.i32) {
             throw new Error(`Condition in while statement must be of type i32, got ${conditionType}`)
         }
 
@@ -169,7 +170,7 @@ export class SemanticAnalyzer {
         this.visitExpression(statement.expression)
     }
 
-    visitExpression(expression: Ast.Expression): DataType {
+    visitExpression(expression: Ast.Expression): Type.DataType {
         switch (expression.type) {
             case AstType.Identifier:
                 return this.visitIdentifier(expression as Ast.Identifier)
@@ -190,7 +191,7 @@ export class SemanticAnalyzer {
         }
     }
 
-    visitIdentifier(identifier: Ast.Identifier): DataType {
+    visitIdentifier(identifier: Ast.Identifier): Type.DataType {
         const variable = this.symbolTable.lookup(SymbolType.Variable, identifier.value) as VariableSymbol
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
@@ -198,40 +199,40 @@ export class SemanticAnalyzer {
         return variable.dataType
     }
 
-    visitIntegerLiteral(_integer: Ast.IntegerLiteral): DataType {
-        return DataType.i32
+    visitIntegerLiteral(_integer: Ast.IntegerLiteral): Type.DataType {
+        return { kind: Type.TypeKind.i32 }
     }
 
-    visitFloatLiteral(_float: Ast.FloatLiteral): DataType {
-        return DataType.f64
+    visitFloatLiteral(_float: Ast.FloatLiteral): Type.DataType {
+        return { kind: Type.TypeKind.f64 }
     }
 
-    visitStringLiteral(_str: Ast.StringLiteral): DataType {
-        return DataType.string
-    }
+    visitStringLiteral(_str: Ast.StringLiteral): Type.DataType {
+        return { kind: Type.TypeKind.String }
+    }               
 
-    visitBinaryExpression(expression: Ast.BinaryExpression): DataType {
+    visitBinaryExpression(expression: Ast.BinaryExpression): Type.DataType {
         const leftType = this.visitExpression(expression.left)
         const rightType = this.visitExpression(expression.right)
     
-        if (leftType !== rightType) {
+        if (!Type.isEqual(leftType, rightType)) {
             throw new Error(`Type mismatch: Cannot perform binary operation on types ${leftType} and ${rightType}`)
         }
     
         return leftType
     }
 
-    visitUnaryExpression(expression: Ast.UnaryExpression): DataType {
+    visitUnaryExpression(expression: Ast.UnaryExpression): Type.DataType {
         const rightType = this.visitExpression(expression.right)
 
-        if (expression.operator === TokenType.Minus && rightType !== DataType.i32 && rightType !== DataType.f64) {
+        if (expression.operator === TokenType.Minus && rightType.kind !== Type.TypeKind.i32 && rightType.kind !== Type.TypeKind.f64) {
             throw new Error(`Invalid unary operator '-' for type ${rightType}`)
         }
 
         return rightType
     }
     
-    visitCallExpression(expression: Ast.CallExpression): DataType {
+    visitCallExpression(expression: Ast.CallExpression): Type.DataType {
         const symbol = this.symbolTable.lookup(SymbolType.Function, expression.callee.value)
 
         if (!symbol) {
@@ -249,7 +250,7 @@ export class SemanticAnalyzer {
                     const argType = this.visitExpression(expression.arguments[i])
                     const paramType = functionInfo.params[i]
             
-                    if (argType !== paramType) {
+                    if (!Type.isEqual(argType, paramType)) {
                         throw new Error(`Type mismatch: Argument ${i + 1} of function '${expression.callee.value}' expected type ${paramType}, but got ${argType}`)
                     }
                 }

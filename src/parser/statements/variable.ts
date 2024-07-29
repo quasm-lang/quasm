@@ -1,6 +1,5 @@
 import { Parser } from '../parser.ts'
 import { TokenType } from '../../lexer/token.ts'
-import { DataType } from '../../datatype/mod.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
 
@@ -15,13 +14,12 @@ Parser.prototype.parseLetStatement = function() {
     this.match(TokenType.Let)
     
     const name = this.parseIdentifier()
-    let dataType: DataType | undefined
+    let dataType: Ast.IdentifierType | undefined
 
     if (this.eq(TokenType.Colon)) { // Type exists
         this.match(TokenType.Colon)
 
-        const dataTypeToken = this.matchDataType()
-        dataType = dataTypeToken.literal
+        dataType = this.parseIdentifierType()
     }
     
     this.match(TokenType.Assignment)

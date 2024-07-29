@@ -1,11 +1,9 @@
-import { DataType } from '../datatype/mod.ts'
-
 export enum TokenType {
     Integer = 'integer',
     Float = 'float',
     Identifier = 'identifier',
     String = 'string',
-    DataType = 'datatype',
+    IdentifierType = 'identifier type',
     
     Plus = '+',
     Minus = '-',
@@ -91,10 +89,10 @@ export const multiCharTokenList: Record<string, TokenType> = {
 
 // Keywords
 export const keywords: Record<string, TokenType> = {
-    'i32': TokenType.DataType,
-    'f64': TokenType.DataType,
-    'none': TokenType.DataType,
-    'string': TokenType.DataType,
+    'i32': TokenType.IdentifierType,
+    'f64': TokenType.IdentifierType,
+    'none': TokenType.IdentifierType,
+    'string': TokenType.IdentifierType,
     'let': TokenType.Let,
     'func': TokenType.Func,
     'return': TokenType.Return,
@@ -109,11 +107,6 @@ export const keywords: Record<string, TokenType> = {
     'import': TokenType.Import,
     'from': TokenType.From,
     'print': TokenType.Print
-}
-
-export type DataTypeToken = Token & {
-    type: TokenType.DataType
-    literal: DataType
 }
 
 export type InfixOperator =

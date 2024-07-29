@@ -167,12 +167,12 @@ Parser.prototype.parseFields = function (delimiter, closingToken) {
     while (!this.eq(closingToken)) {
         const name = this.parseIdentifier()
         this.match(TokenType.Colon)
-        const dataTypeToken = this.matchDataType()
+        const dataType = this.parseIdentifierType()
 
         const param: Ast.Field = {
             type: AstType.Field,
             name: name,
-            dataType: dataTypeToken.literal,
+            dataType,
             location: this.getLocation()
         }
         parameters.push(param)

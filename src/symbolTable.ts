@@ -1,4 +1,4 @@
-import { DataType } from '../datatype/mod.ts'
+import { DataType } from './datatype/mod.ts'
 
 export enum SymbolType {
     Variable = 'variable',
@@ -7,7 +7,7 @@ export enum SymbolType {
     StringLiteral = 'stringLiteral'
 }
 
-export type Symbol = VariableSymbol | FunctionSymbol | StructSymbol | StringLiteralSymbol
+export type Symbol = VariableSymbol | FunctionSymbol | StringLiteralSymbol
 
 export enum VariableReason {
     Declaration = 'declaration',
@@ -21,13 +21,6 @@ export interface VariableSymbol {
     instanceOf?: string
     index: number
     reason: VariableReason
-}
-
-export interface StructSymbol {
-    type: SymbolType.Struct
-    name: string
-    members: Map<string, DataType>
-    size: number
 }
 
 export interface FunctionSymbol {

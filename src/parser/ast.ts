@@ -28,7 +28,8 @@ export enum AstType {
     FloatLiteral = 'FLOAT_LITERAL',
     StringLiteral = 'STRING_LITERAL',
     Field = 'FIELD',
-    Spec = 'SPEC'
+    Spec = 'SPEC',
+    IdentifierType = 'IDENTIFIER_TYPE'
 }
 
 export interface SourceLocation {
@@ -144,7 +145,7 @@ export interface MemberAccessExpression extends Expression {
 export interface Field extends Node {
     type: AstType.Field
     name: Identifier
-    dataType: DataType
+    dataType: IdentifierType
 }
 
 export interface Spec extends Node {
@@ -171,5 +172,10 @@ export interface StringLiteral extends Expression {
 
 export interface Identifier extends Expression {
     type: AstType.Identifier
+    value: string
+}
+
+export interface IdentifierType extends Expression {
+    type: AstType.IdentifierType
     value: string
 }

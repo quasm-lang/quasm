@@ -2,8 +2,8 @@ import { Parser } from '../parser.ts'
 import { AstType } from '../ast.ts'
 import * as Ast from '../ast.ts'
 import { TokenType } from '../../lexer/token.ts'
-import { DataType } from '../../datatype/mod.ts'
-import { FunctionSymbol, SymbolType } from '../../compiler/symbolTable.ts'
+import { DataType, PrimitiveType, TypeKind } from '../../datatype/mod.ts'
+import { FunctionSymbol, SymbolType } from '../../symbolTable.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -19,11 +19,11 @@ Parser.prototype.parseFuncStatement = function () {
     const parameters = this.parseFields(TokenType.Comma, TokenType.RightParen)
     this.match(TokenType.RightParen)
 
-    let returnType: DataType = DataType.none // Default return type
+    let returnType: DataType = { kind: TypeKind.None } // Default return type
     if (this.eq(TokenType.RightArrow)) {     // scenario in which type exists
         this.match(TokenType.RightArrow)
-        const returnToken = this.matchDataType()
-        returnType = returnToken.literal
+        const returnToken = this.parseIdentifierType()
+        returnType = { kind: TypeKind[returnToken.value  as keyof typeof TypeKind] } as PrimitiveType
     }
 
     const block = this.parseBlockStatement()
@@ -32,7 +32,7 @@ Parser.prototype.parseFuncStatement = function () {
     this.symbolTable.define({
         type: SymbolType.Function,
         name: name.value,
-        params: parameters.map(param => param.dataType),
+        params: parameters.map(param => ({ kind: param.dataType.value })),
         returnType
     } as FunctionSymbol)
 

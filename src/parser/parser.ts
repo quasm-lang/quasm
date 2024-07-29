@@ -1,7 +1,6 @@
 import {
     Token,
-    TokenType,
-    DataTypeToken
+    TokenType
 } from '../lexer/token.ts'
 
 import { Lexer } from '../lexer/mod.ts'
@@ -9,7 +8,7 @@ import { Lexer } from '../lexer/mod.ts'
 import { AstType } from './ast.ts'
 import * as Ast from './ast.ts'
 
-import { SymbolTable } from '../compiler/symbolTable.ts'
+import { SymbolTable } from '../symbolTable.ts'
 
 export class Parser {
     curToken: Token
@@ -41,17 +40,6 @@ export class Parser {
             return this.consume()
         }
         throw Error(`Parser error: Expected '${type}', but got '${this.curToken.type}' at line ${this.curToken.line} column ${this.curToken.column}`)
-    }
-
-    eqDataType(): boolean {
-        return this.curToken.type === TokenType.DataType
-    }
-
-    matchDataType(): DataTypeToken {
-        if (this.curToken.type === TokenType.DataType) {
-            return this.consume() as DataTypeToken
-        }
-        throw new Error(`Parser error: Expected a data type, but got '${this.curToken.type}'`)
     }
 
     getLocation(): Ast.SourceLocation {
