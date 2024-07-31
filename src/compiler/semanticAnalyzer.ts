@@ -1,7 +1,7 @@
 import * as Ast from '../parser/ast.ts'
-import * as Symbol from '../symbolTable.ts'
-import * as Token from '../lexer/token.ts'
 import * as Type from '../datatype/mod.ts'  
+import * as Token from '../lexer/token.ts'
+import * as Symbol from '../symbolTable.ts'
 
 export class SemanticAnalyzer {
     constructor(private symbolTable: Symbol.SymbolTable) {}

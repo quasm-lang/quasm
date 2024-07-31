@@ -1,10 +1,7 @@
-import * as Token from '../lexer/token.ts'
-
 import { Lexer } from '../lexer/mod.ts'
-
-import * as Ast from './ast.ts'
-
 import { SymbolTable } from '../symbolTable.ts'
+import * as Ast from './ast.ts'
+import * as Token from '../lexer/token.ts'
 
 export class Parser {
     curToken: Token.Token

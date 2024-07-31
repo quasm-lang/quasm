@@ -1,7 +1,7 @@
 import { Parser } from '../parser.ts'
 import * as Ast from '../ast.ts'
-import * as Token from '../../lexer/token.ts'
 import * as Type from '../../datatype/mod.ts'
+import * as Token from '../../lexer/token.ts'
 import * as Symbol from '../../symbolTable.ts'
 
 declare module '../parser.ts' {

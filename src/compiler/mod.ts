@@ -1,10 +1,10 @@
+import { binaryen } from '../deps.ts'
+
 import { Lexer } from '../lexer/mod.ts'
 import { Parser } from '../parser/mod.ts'
-import { CodeGenerator } from './generator.ts'
-import { SymbolTable } from '../symbolTable.ts'
 import { getOptions } from '../options.ts'
-
-import { binaryen } from '../deps.ts'
+import { SymbolTable } from '../symbolTable.ts'
+import { CodeGenerator } from './generator.ts'
 
 export function emit(src: string): binaryen.Module {
     const debug = getOptions().debug

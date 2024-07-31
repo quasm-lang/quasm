@@ -1,6 +1,6 @@
 import { Parser } from '../parser.ts'
-import * as Token from '../../lexer/token.ts'
 import * as Ast from '../ast.ts'
+import * as Token from '../../lexer/token.ts'
 
 import './controlFlow.ts'
 import './function.ts'

@@ -1,9 +1,10 @@
-import { emit } from './compiler/mod.ts'
 
 import { Command } from './deps.ts'
 import { ensureDirSync } from 'std/fs/mod.ts'
 import { basename, join } from 'std/path/mod.ts'
 import { setOptions, getOptions } from './options.ts'
+
+import { emit } from './compiler/mod.ts'
 
 await new Command()
     .name('Quasm')
