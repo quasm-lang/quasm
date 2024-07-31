@@ -14,11 +14,11 @@ func add(a: i32, b: i32) -> i32 {
 }
 ```
 ## Getting Started
-```deno run --allow-read --allow-write src/main.ts run examples/simple.qs```
+```deno run --allow-read --allow-write src/main.ts run tests/simple.qsm```
 
 or simply
 
-```deno task -q run examples/simple.qs```
+```deno task -q run tests/simple.qsm```
 
 
 ## Contributing
