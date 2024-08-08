@@ -68,6 +68,8 @@ export const tokenList: Record<string, Type> = {
     ')': Type.RightParen,
     '{': Type.LeftBrace,
     '}': Type.RightBrace,
+    '[': Type.LeftBracket,
+    ']': Type.RightBracket,
     ',': Type.Comma,
     '.': Type.Dot,
     ':': Type.Colon,

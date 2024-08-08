@@ -10,6 +10,7 @@ declare module '../parser.ts' {
         parseStringLiteral(): Ast.StringLiteral
         parseIdentifier(): Ast.Identifier
         parseIdentifierType(): Ast.IdentifierType
+        parseDataType(): Ast.IdentifierType | Ast.ArrayType
     }
 }
 
@@ -60,22 +61,16 @@ Parser.prototype.parseIdentifierType = function () {
     }
 }
 
-// TODO: Add support for array types
-// export interface ArrayType {
-//     baseType: Identifier;
-//     dimensions: number;
-// }
-// export interface Field extends Node {
-//     type: Ast.Type.Field;
-//     name: Identifier;
-//     dataType: Identifier | ArrayType;
-// }
-// function parseDataType(): Identifier | ArrayType {
-//     const baseType = this.parseIdentifier();
-//     if (this.eq(Token.Type.LeftBracket)) {
-//         this.match(Token.Type.LeftBracket);
-//         this.match(Token.Type.RightBracket);
-//         return { baseType, dimensions: 1 };
-//     }
-//     return baseType;
-// }
+Parser.prototype.parseDataType = function(): Ast.IdentifierType | Ast.ArrayType {
+    if (this.eq(Token.Type.LeftBracket)) {
+        this.match(Token.Type.LeftBracket);
+        const elementType = this.parseIdentifierType();
+        this.match(Token.Type.RightBracket);
+        return {
+            type: Ast.Type.ArrayType,
+            elementType,
+            location: this.getLocation()
+        };
+    }
+    return this.parseIdentifierType();
+}

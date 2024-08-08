@@ -3,8 +3,10 @@ import { Parser } from '../mod.ts'
 import * as Token from '../../lexer/token.ts'
 
 import './core.ts'
+import './sequence.ts'
 
 const precedenceMap: Partial<Record<Token.Type, number>> = {
+    [Token.Type.LeftBracket]: 6,
     [Token.Type.Dot]: 5,
     [Token.Type.Asterisk]: 4,
     [Token.Type.Slash]: 4,
@@ -27,7 +29,6 @@ declare module '../parser.ts' {
         parseExpression(precedence: number): Ast.Expression
         parsePrefixExpression(): Ast.Expression
         parseInfixExpression(left: Ast.Expression): Ast.Expression
-        parseIdentifierOrCallExpression(): Ast.Expression
         parseUnaryExpression(): Ast.UnaryExpression
         parseGroupedExpression(): Ast.Expression
         parseBinaryExpression(left: Ast.Expression): Ast.BinaryExpression
@@ -56,11 +57,13 @@ Parser.prototype.parsePrefixExpression = function () {
         case Token.Type.String:
             return this.parseStringLiteral()
         case Token.Type.Identifier:
-            return this.parseIdentifierOrCallExpression()
+            return this.parseIdentifier()
         case Token.Type.Minus:
             return this.parseUnaryExpression()
         case Token.Type.LeftParen:
             return this.parseGroupedExpression()
+        case Token.Type.LeftBracket:
+            return this.parseArrayLiteral()
     }
     throw new Error(`Parser error: No prefix found for ${this.curToken.literal}`)
 }
@@ -79,6 +82,8 @@ Parser.prototype.parseInfixExpression = function (left) {
             return this.parseBinaryExpression(left)
         case Token.Type.LeftParen:
             return this.parseCallExpression(left as Ast.Identifier)
+        case Token.Type.LeftBracket:
+            return this.parseIndexExpression(left)
         case Token.Type.Dot: {
             this.match(Token.Type.Dot)
             const member = this.parseIdentifier()
@@ -92,15 +97,6 @@ Parser.prototype.parseInfixExpression = function (left) {
         default:
             return left
     }
-}
-
-Parser.prototype.parseIdentifierOrCallExpression = function () {
-    const identifier = this.parseIdentifier()
-
-    if (this.eq(Token.Type.LeftParen)) {
-        return this.parseCallExpression(identifier)
-    }
-    return identifier
 }
 
 Parser.prototype.parseUnaryExpression = function () {

@@ -13,12 +13,11 @@ Parser.prototype.parseLetStatement = function() {
     this.match(Token.Type.Let)
     
     const name = this.parseIdentifier()
-    let dataType: Ast.IdentifierType | undefined
+    let dataType: Ast.IdentifierType | Ast.ArrayType | undefined
 
     if (this.eq(Token.Type.Colon)) { // Type exists
         this.match(Token.Type.Colon)
-
-        dataType = this.parseIdentifierType()
+        dataType = this.parseDataType()
     }
     
     this.match(Token.Type.Assignment)

@@ -20,13 +20,16 @@ export enum Type {
     UnaryExpression = 'UNARY_EXPRESSION',
     BinaryExpression = 'BINARY_EXPRESSION',
     MemberAccessExpression = 'MEMBER_ACCESS_EXPRESSION',
+    IndexExpression = 'INDEX_EXPRESSION',
     Identifier = 'IDENTIFIER',
     IntegerLiteral = 'INTEGER_LITERAL',
     FloatLiteral = 'FLOAT_LITERAL',
     StringLiteral = 'STRING_LITERAL',
+    ArrayLiteral = 'ARRAY_LITERAL',
     Field = 'FIELD',
     Spec = 'SPEC',
-    IdentifierType = 'IDENTIFIER_TYPE'
+    IdentifierType = 'IDENTIFIER_TYPE',
+    ArrayType = 'ARRAY_TYPE',
 }
 
 export interface SourceLocation {
@@ -139,6 +142,12 @@ export interface MemberAccessExpression extends Expression {
     member: Identifier
 }
 
+export interface IndexExpression extends Expression {
+    type: Type.IndexExpression
+    base: Expression
+    index: Expression
+}
+
 export interface Field extends Node {
     type: Type.Field
     name: Identifier
@@ -172,7 +181,17 @@ export interface Identifier extends Expression {
     value: string
 }
 
+export interface ArrayLiteral extends Expression {
+    type: Type.ArrayLiteral
+    elements: Expression[]
+}
+
 export interface IdentifierType extends Expression {
     type: Type.IdentifierType
     value: string
+}
+
+export interface ArrayType extends Expression {
+    type: Type.ArrayType
+    elementType: IdentifierType
 }
