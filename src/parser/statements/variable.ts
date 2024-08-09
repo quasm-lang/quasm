@@ -12,13 +12,23 @@ declare module '../parser.ts' {
 Parser.prototype.parseLetStatement = function() {
     this.match(Token.Type.Let)
     
-    const name = this.parseIdentifier()
-    let dataType: Ast.IdentifierType | Ast.ArrayType | Ast.TupleType | undefined
-
-    if (this.eq(Token.Type.Colon)) { // Type exists
-        this.match(Token.Type.Colon)
-        dataType = this.parseDataType()
-    }
+    const specs: Ast.Spec[] = []
+    do {
+        const name = this.parseIdentifier()
+        let dataType: Ast.IdentifierType | Ast.ArrayType | undefined
+        if (this.eq(Token.Type.Colon)) {
+            this.match(Token.Type.Colon)
+            dataType = this.parseDataType()
+        }
+        specs.push({
+            type: Ast.Type.Spec,
+            name,
+            dataType,
+            location: this.getLocation()
+        })
+        if (!this.eq(Token.Type.Comma)) break
+        this.match(Token.Type.Comma)
+    } while (true)
     
     this.match(Token.Type.Assignment)
     const value = this.parseExpression(0)
@@ -27,16 +37,12 @@ Parser.prototype.parseLetStatement = function() {
 
     return {
         type: Ast.Type.LetStatement,
-        spec: {
-            type: Ast.Type.Spec,
-            name,
-            dataType,
-            value,
-            location: this.getLocation()
-        } as Ast.Spec,
+        specs,
+        value,
         location: this.getLocation()
     }
 }
+
 
 Parser.prototype.parseAssignmentStatement = function(left) {
     this.match(Token.Type.Assignment)

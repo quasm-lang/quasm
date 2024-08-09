@@ -71,7 +71,8 @@ export interface BlockStatement extends Statement {
 
 export interface LetStatement extends Statement {
     type: Type.LetStatement
-    spec: Spec
+    specs: Spec[]
+    value: Expression
 }
 
 export interface FuncStatement extends Statement {
@@ -159,8 +160,7 @@ export interface Field extends Node {
 export interface Spec extends Node {
     type: Type.Spec
     name: Identifier
-    dataType?: DataType
-    value: Expression
+    dataType?: IdentifierType | ArrayType
 }
 
 export interface IntegerLiteral extends Expression {
