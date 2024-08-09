@@ -108,11 +108,31 @@ Parser.prototype.parseUnaryExpression = function () {
     }
 }
 
-Parser.prototype.parseGroupedExpression = function() {
+Parser.prototype.parseGroupedExpression = function () {
     this.match(Token.Type.LeftParen)
-    const expression = this.parseExpression(0)
+    const firstExpression = this.parseExpression(0)
+    
+    // It's a tuple
+    if (this.eq(Token.Type.Comma)) {
+        this.match(Token.Type.Comma)
+        const elements = [firstExpression, this.parseExpression(0)]
+        
+        while (this.eq(Token.Type.Comma)) {
+            this.match(Token.Type.Comma)
+            elements.push(this.parseExpression(0))
+        }
+        
+        this.match(Token.Type.RightParen)
+        return {
+            type: Ast.Type.TupleLiteral,
+            elements,
+            location: this.getLocation()
+        }
+    }
+
+    // It's a grouped expression
     this.match(Token.Type.RightParen)
-    return expression
+    return firstExpression
 }
 
 Parser.prototype.parseBinaryExpression = function (left) {

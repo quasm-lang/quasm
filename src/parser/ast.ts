@@ -26,10 +26,12 @@ export enum Type {
     FloatLiteral = 'FLOAT_LITERAL',
     StringLiteral = 'STRING_LITERAL',
     ArrayLiteral = 'ARRAY_LITERAL',
+    TupleLiteral = 'TUPLE_LITERAL',
     Field = 'FIELD',
     Spec = 'SPEC',
     IdentifierType = 'IDENTIFIER_TYPE',
     ArrayType = 'ARRAY_TYPE',
+    TupleType = 'TUPLE_TYPE',
 }
 
 export interface SourceLocation {
@@ -186,6 +188,11 @@ export interface ArrayLiteral extends Expression {
     elements: Expression[]
 }
 
+export interface TupleLiteral extends Expression {
+    type: Type.TupleLiteral
+    elements: Expression[]
+}
+
 export interface IdentifierType extends Expression {
     type: Type.IdentifierType
     value: string
@@ -194,4 +201,9 @@ export interface IdentifierType extends Expression {
 export interface ArrayType extends Expression {
     type: Type.ArrayType
     elementType: IdentifierType
+}
+
+export interface TupleType extends Expression {
+    type: Type.TupleType
+    elementTypes: IdentifierType[]
 }

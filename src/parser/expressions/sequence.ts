@@ -6,7 +6,7 @@ declare module '../parser.ts' {
     interface Parser {
         parseListLiteral(openToken: Token.Type, closeToken: Token.Type): Ast.Expression[]
         parseArrayLiteral(): Ast.ArrayLiteral
-        // parseTupleLiteral():
+        parseTupleLiteral(): Ast.TupleLiteral
         parseIndexExpression(left: Ast.Expression): Ast.IndexExpression
     }
 }
@@ -39,15 +39,15 @@ Parser.prototype.parseArrayLiteral = function (): Ast.ArrayLiteral {
     }
 }
 
-// Parser.prototype.parseTupleLiteral = function(): Ast.TupleLiteral {
-//     const elements = this.parseListLiteral(Token.Type.LeftParen, Token.Type.RightParen)
+Parser.prototype.parseTupleLiteral = function(): Ast.TupleLiteral {
+    const elements = this.parseListLiteral(Token.Type.LeftParen, Token.Type.RightParen)
 
-//     return {
-//         type: Ast.Type.TupleLiteral,
-//         elements,
-//         location: this.getLocation()
-//     }
-// }
+    return {
+        type: Ast.Type.TupleLiteral,
+        elements,
+        location: this.getLocation()
+    }
+}
 
 Parser.prototype.parseIndexExpression = function (left) {
     this.match(Token.Type.LeftBracket)

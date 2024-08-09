@@ -10,7 +10,7 @@ declare module '../parser.ts' {
         parseStringLiteral(): Ast.StringLiteral
         parseIdentifier(): Ast.Identifier
         parseIdentifierType(): Ast.IdentifierType
-        parseDataType(): Ast.IdentifierType | Ast.ArrayType
+        parseDataType(): Ast.IdentifierType | Ast.ArrayType | Ast.TupleType
     }
 }
 
@@ -61,7 +61,7 @@ Parser.prototype.parseIdentifierType = function () {
     }
 }
 
-Parser.prototype.parseDataType = function(): Ast.IdentifierType | Ast.ArrayType {
+Parser.prototype.parseDataType = function(): Ast.IdentifierType | Ast.ArrayType | Ast.TupleType {
     if (this.eq(Token.Type.LeftBracket)) {
         this.match(Token.Type.LeftBracket);
         const elementType = this.parseIdentifierType();
@@ -71,6 +71,21 @@ Parser.prototype.parseDataType = function(): Ast.IdentifierType | Ast.ArrayType 
             elementType,
             location: this.getLocation()
         };
+    } else if (this.eq(Token.Type.LeftParen)) {
+        this.match(Token.Type.LeftParen)
+        const elementTypes: Ast.IdentifierType[] = []
+        while (!this.eq(Token.Type.RightParen)) {
+            elementTypes.push(this.parseIdentifierType())
+            if (!this.eq(Token.Type.RightParen)) {
+                this.match(Token.Type.Comma)
+            }
+        }
+        this.match(Token.Type.RightParen)
+        return {
+            type: Ast.Type.TupleType,
+            elementTypes,
+            location: this.getLocation()
+        }
     }
     return this.parseIdentifierType();
 }
