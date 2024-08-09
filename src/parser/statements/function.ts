@@ -21,9 +21,7 @@ Parser.prototype.parseFuncStatement = function () {
     let returnType: Type.DataType = Type.None // Default return type
     if (this.eq(Token.Type.RightArrow)) {     // scenario in which type exists
         this.match(Token.Type.RightArrow)
-        const returnToken = this.parseIdentifierType()
-        // returnType = { kind: TypeKind[returnToken.value as keyof typeof TypeKind] } as PrimitiveType
-        returnType = Type.fromString(returnToken.value)
+        returnType = this.parseDataType()
     }
 
     const block = this.parseBlockStatement()
@@ -32,7 +30,7 @@ Parser.prototype.parseFuncStatement = function () {
     this.symbolTable.define({
         type: Symbol.Type.Function,
         name: name.value,
-        params: parameters.map(param => Type.fromString(param.dataType.value)),
+        params: parameters.map(param => param.dataType),
         returnType
     } as Symbol.Function)
 

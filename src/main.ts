@@ -8,7 +8,7 @@ import { emit } from './compiler/mod.ts'
 
 await new Command()
     .name('Quasm')
-    .version('0.0.5')
+    .version('0.0.6')
     .description('Compiles to WASM')
     .globalOption('-d, --debug', 'Enable debugging.', { default: false })
     .action(() => console.log('Please use proper commands!'))

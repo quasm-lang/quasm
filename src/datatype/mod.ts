@@ -3,7 +3,8 @@ import { binaryen } from '../deps.ts'
 export enum TypeKind {
     Primitive = 'Primitive',
     Struct = 'Struct',
-    Array = 'Array'
+    Array = 'Array',
+    Tuple = 'Tuple'
 }
 
 export interface DataType {
@@ -34,6 +35,11 @@ export interface StructType extends DataType {
 export interface ArrayType extends DataType {
     kind: TypeKind.Array
     elementType: DataType
+}
+
+export interface TupleType extends DataType {
+    kind: TypeKind.Tuple
+    elementTypes: DataType[]
 }
 
 export const i32: PrimitiveType = {
@@ -92,6 +98,26 @@ export const None: PrimitiveType = {
     }
 }
 
+// helper functions
+export function isPrimitiveType(type: DataType): type is PrimitiveType {
+    return type.kind === TypeKind.Primitive
+}
+
+export function fromString(typeString: string): DataType {
+    switch (typeString) {
+        case PrimitiveKind.i32:
+            return i32
+        case PrimitiveKind.f64:
+            return f64
+        case PrimitiveKind.String:
+            return String
+        case PrimitiveKind.None:
+            return None
+        default:
+            throw new Error(`Unknown type: ${typeString}`)
+    }
+}
+
 export function createStructType(name: string, fields: Map<string, DataType>): StructType {
     return {
         kind: TypeKind.Struct,
@@ -136,22 +162,20 @@ export function createArrayType(elementType: DataType): ArrayType {
     }
 }
 
-// helper functions
-export function isPrimitiveType(type: DataType): type is PrimitiveType {
-    return type.kind === TypeKind.Primitive
-}
-
-export function fromString(typeString: string): DataType {
-    switch (typeString) {
-        case PrimitiveKind.i32:
-            return i32
-        case PrimitiveKind.f64:
-            return f64
-        case PrimitiveKind.String:
-            return String
-        case PrimitiveKind.None:
-            return None
-        default:
-            throw new Error(`Unknown type: ${typeString}`)
+export function createTupleType(elementTypes: DataType[]): TupleType {
+    return {
+        kind: TypeKind.Tuple,
+        elementTypes,
+        eq(other: DataType): boolean {
+            return other.kind === TypeKind.Tuple &&
+                   this.elementTypes.length === (other as TupleType).elementTypes.length &&
+                   this.elementTypes.every((type, index) => type.eq((other as TupleType).elementTypes[index]))
+        },
+        toString(): string {
+            return `(${this.elementTypes.map(type => type.toString()).join(', ')})`
+        },
+        toWasmType(): binaryen.Type {
+            return binaryen.createType(this.elementTypes.map(type => type.toWasmType()))
+        }
     }
 }

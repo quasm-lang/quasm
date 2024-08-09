@@ -2,6 +2,7 @@ import { Parser } from '../parser.ts'
 import * as Ast from '../ast.ts'
 import * as Symbol from '../../symbolTable.ts'
 import * as Token from '../../lexer/token.ts'
+import * as Type from '../../datatype/mod.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -9,8 +10,8 @@ declare module '../parser.ts' {
         parseFloatLiteral(): Ast.FloatLiteral
         parseStringLiteral(): Ast.StringLiteral
         parseIdentifier(): Ast.Identifier
-        parseIdentifierType(): Ast.IdentifierType
-        parseDataType(): Ast.IdentifierType | Ast.ArrayType
+        parseIdentifierType(): Type.DataType
+        parseDataType(): Type.DataType
     }
 }
 
@@ -54,11 +55,7 @@ Parser.prototype.parseIdentifier = function () {
 }
 
 Parser.prototype.parseIdentifierType = function () {
-    return {
-        type: Ast.Type.IdentifierType,
-        value: this.match(Token.Type.IdentifierType).literal,
-        location: this.getLocation()
-    }
+    return Type.fromString(this.match(Token.Type.IdentifierType).literal)
 }
 
 Parser.prototype.parseDataType = function() {
@@ -66,12 +63,18 @@ Parser.prototype.parseDataType = function() {
         this.match(Token.Type.LeftBracket)
         const elementType = this.parseIdentifierType()
         this.match(Token.Type.RightBracket)
+        return Type.createArrayType(elementType)
+    } else if (this.eq(Token.Type.LeftParen)) {
+        this.match(Token.Type.LeftParen)
+        const types = [this.parseIdentifierType()]
         
-        return {
-            type: Ast.Type.ArrayType,
-            elementType,
-            location: this.getLocation()
-        };
+        while (this.eq(Token.Type.Comma)) {
+            this.match(Token.Type.Comma)
+            types.push(this.parseIdentifierType())
+        }
+        
+        this.match(Token.Type.RightParen)
+        return types.length === 1 ? types[0] : Type.createTupleType(types)
     }
 
     return this.parseIdentifierType()

@@ -111,27 +111,48 @@ export class CodeGenerator {
     } 
 
     private visitLetStatement(statement: Ast.LetStatement): binaryen.ExpressionRef {
-        const { name, dataType, value } = statement.spec
+        const { value, dataType } = statement
         
         const initExpr = this.visitExpression(value)
+        const exprType = dataType!
 
-        if (!dataType) {
-            throw new Error(`Type inference failed for variable ${name.value}`)
+        if (exprType.kind === Type.TypeKind.Tuple) {
+            const setLocals: binaryen.ExpressionRef[] = []
+            const tupleType = exprType as Type.TupleType
+
+            statement.specs.forEach((spec, index) => {
+                this.symbolTable.define({
+                    type: Symbol.Type.Variable,
+                    name: spec.name.value,
+                    dataType: tupleType.elementTypes[index],
+                    reason: Symbol.VariableReason.Declaration
+                } as Symbol.Variable)
+
+                const localIndex = this.symbolTable.getIndex(spec.name.value)!
+
+                setLocals.push(
+                    this.module.local.set(
+                        localIndex,
+                        this.module.tuple.extract(this.visitExpression(value), index)
+                    )
+                )
+
+            })
+            
+            return this.module.block(null, setLocals)
         }
 
+        const spec = statement.specs[0]
         this.symbolTable.define({
             type: Symbol.Type.Variable,
-            name: name.value,
-            dataType,
+            name: spec.name.value,
+            dataType: exprType,
             reason: Symbol.VariableReason.Declaration
         } as Symbol.Variable)
 
-        const index = this.symbolTable.getIndex(name.value)
-        if (index === undefined) {
-            throw new Error(`Failed to get index for variable ${name.value}`)
-        }
-        
-        return this.module.local.set(index, initExpr)
+        const localIndex = this.symbolTable.getIndex(spec.name.value)!
+
+        return this.module.local.set(localIndex, initExpr)
     }
 
     private visitFuncStatement(func: Ast.FuncStatement): binaryen.ExpressionRef {
@@ -147,7 +168,7 @@ export class CodeGenerator {
             this.symbolTable.define({
                 type: Symbol.Type.Variable,
                 name: param.name.value,
-                dataType: Type.fromString(param.dataType.value),
+                dataType: param.dataType,
                 index,
                 reason: Symbol.VariableReason.Parameter
             } as Symbol.Variable)
@@ -286,6 +307,8 @@ export class CodeGenerator {
                 return this.visitNumerical(expression as Ast.FloatLiteral)
             case Ast.Type.StringLiteral:
                 return this.visitStringLiteral(expression as Ast.StringLiteral)
+            case Ast.Type.TupleLiteral:
+                return this.visitTupleLiteral(expression as Ast.TupleLiteral)
             case Ast.Type.Identifier:
                     return this.visitIdentifier(expression as Ast.Identifier)
             case Ast.Type.CallExpression:
@@ -391,6 +414,10 @@ export class CodeGenerator {
         return this.module.i32.const(symbol.offset)
     }
     
+    private visitTupleLiteral(tuple: Ast.TupleLiteral): binaryen.ExpressionRef {
+        const elements = tuple.elements.map(element => this.visitExpression(element))
+        return this.module.tuple.make(elements)
+    }
 
     private visitIdentifier(identifier: Ast.Identifier): binaryen.ExpressionRef {
         const variable = this.symbolTable.lookup(Symbol.Type.Variable, identifier.value) as Symbol.Variable

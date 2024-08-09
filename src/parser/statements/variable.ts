@@ -1,6 +1,7 @@
 import { Parser } from '../parser.ts'
 import * as Token from '../../lexer/token.ts'
 import * as Ast from '../ast.ts'
+import * as Type from '../../datatype/mod.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -15,7 +16,7 @@ Parser.prototype.parseLetStatement = function() {
     const specs: Ast.Spec[] = []
     do {
         const name = this.parseIdentifier()
-        let dataType: Ast.IdentifierType | Ast.ArrayType | undefined
+        let dataType: Type.DataType | undefined
         if (this.eq(Token.Type.Colon)) {
             this.match(Token.Type.Colon)
             dataType = this.parseDataType()
@@ -32,7 +33,6 @@ Parser.prototype.parseLetStatement = function() {
     
     this.match(Token.Type.Assignment)
     const value = this.parseExpression(0)
-
     this.match(Token.Type.Semicolon)
 
     return {

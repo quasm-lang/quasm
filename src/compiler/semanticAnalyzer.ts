@@ -11,13 +11,9 @@ export class SemanticAnalyzer {
     }
 
     visitProgram(program: Ast.Program) {
-        this.symbolTable.enterScope()
-        
         for (const statement of program.statements) {
             this.visitStatement(statement)
         }
-
-        this.symbolTable.exitScope()
     }
 
     visitStatement(statement: Ast.Statement) {
@@ -46,30 +42,46 @@ export class SemanticAnalyzer {
         }
     }
 
-    visitLetStatement(statement: Ast.LetStatement): Type.DataType {
-        const { name, dataType, value } = statement.spec
-
-        if (dataType === undefined && value === undefined) {
-            throw new Error(`Illegal let declaration!`)
-        }
-    
+    visitLetStatement(statement: Ast.LetStatement) {
+        const { specs, value } = statement
         const inferredType = this.visitExpression(value)
+        statement.dataType = inferredType
 
-        if (dataType && inferredType !== dataType) {
-            throw new Error(`Type mismatch: Expected ${dataType}, but got ${inferredType} for variable '${name.value}'`)
+        if (inferredType.kind === Type.TypeKind.Tuple) {
+            const tupleType = inferredType as Type.TupleType
+            if (specs.length !== tupleType.elementTypes.length) {
+                throw new Error(`Tuple type mismatch: Can't extract ${tupleType.elementTypes.length} elements into ${specs.length}`)
+            }
+
+            for (const [i, spec] of specs.entries()) {
+                const elementType = tupleType.elementTypes[i]
+                if (spec.dataType && !spec.dataType.eq(elementType)) {
+                    throw new Error(`Type mismatch for ${spec.name.value}: expected ${spec.dataType}, got ${elementType}`)
+                }
+                this.symbolTable.define({
+                    type: Symbol.Type.Variable,
+                    name: spec.name.value,
+                    dataType: spec.dataType || elementType,
+                    reason: Symbol.VariableReason.Declaration
+                } as Symbol.Variable)
+            }
+        } else {
+            if (specs.length !== 1) {
+                throw new Error(`Cannot unpack non-tuple value into multiple variables`)
+            }
+    
+            const spec = specs[0]
+            if (spec.dataType && !spec.dataType.eq(inferredType)) {
+                throw new Error(`Type mismatch for ${spec.name.value}: expected ${spec.dataType}, got ${inferredType}`)
+            }
+    
+            this.symbolTable.define({
+                type: Symbol.Type.Variable,
+                name: spec.name.value,
+                dataType: spec.dataType || inferredType,
+                reason: Symbol.VariableReason.Declaration
+            } as Symbol.Variable)
         }
-
-        const finalType = dataType || inferredType
-        statement.spec.dataType = finalType
-
-        this.symbolTable.define({
-            type: Symbol.Type.Variable,
-            name: name.value,
-            dataType: finalType,
-            reason: Symbol.VariableReason.Declaration
-        } as Symbol.Variable)
-
-        return finalType
     }
 
     visitFuncStatement(func: Ast.FuncStatement) {
@@ -83,7 +95,7 @@ export class SemanticAnalyzer {
             this.symbolTable.define({
                 type: Symbol.Type.Variable,
                 name: param.name.value,
-                dataType: Type.fromString(param.dataType.value),
+                dataType: param.dataType,
                 index,
                 reason: Symbol.VariableReason.Parameter
             } as Symbol.Variable)
@@ -95,7 +107,10 @@ export class SemanticAnalyzer {
         }
     
         /* TODO: Validate the return type of the function
-                 Has to validate all the existing return in the function */ 
+            Has to validate all the existing return in the function
+            1. return statement could be a tuple, so we need to validate each element of the tuple
+            2. return statement could be inside child nodes recursively (if, while, etc but not limited to)
+        */ 
     
         // Exit the function scope
         this.symbolTable.exitFunc()
@@ -178,6 +193,8 @@ export class SemanticAnalyzer {
                 return this.visitFloatLiteral(expression as Ast.FloatLiteral)
             case Ast.Type.StringLiteral:
                 return this.visitStringLiteral(expression as Ast.StringLiteral)
+            case Ast.Type.TupleLiteral:
+                return this.visitTupleLiteral(expression as Ast.TupleLiteral)
             case Ast.Type.BinaryExpression:
                 return this.visitBinaryExpression(expression as Ast.BinaryExpression)
             case Ast.Type.UnaryExpression:
@@ -207,7 +224,12 @@ export class SemanticAnalyzer {
 
     visitStringLiteral(_str: Ast.StringLiteral): Type.DataType {
         return Type.String
-    }               
+    }
+
+    visitTupleLiteral(expression: Ast.TupleLiteral): Type.DataType {
+        const types = expression.elements.map(element => this.visitExpression(element))
+        return Type.createTupleType(types)
+    }
 
     visitBinaryExpression(expression: Ast.BinaryExpression): Type.DataType {
         const leftType = this.visitExpression(expression.left)

@@ -73,6 +73,7 @@ export interface LetStatement extends Statement {
     type: Type.LetStatement
     specs: Spec[]
     value: Expression
+    dataType?: DataType
 }
 
 export interface FuncStatement extends Statement {
@@ -154,13 +155,13 @@ export interface IndexExpression extends Expression {
 export interface Field extends Node {
     type: Type.Field
     name: Identifier
-    dataType: IdentifierType
+    dataType: DataType
 }
 
 export interface Spec extends Node {
     type: Type.Spec
     name: Identifier
-    dataType?: IdentifierType | ArrayType
+    dataType?: DataType
 }
 
 export interface IntegerLiteral extends Expression {
@@ -193,17 +194,17 @@ export interface TupleLiteral extends Expression {
     elements: Expression[]
 }
 
-export interface IdentifierType extends Expression {
-    type: Type.IdentifierType
-    value: string
-}
+// export interface IdentifierType extends Expression {
+//     type: Type.IdentifierType
+//     value: string
+// }
 
-export interface ArrayType extends Expression {
-    type: Type.ArrayType
-    elementType: IdentifierType
-}
+// export interface ArrayType extends Expression {
+//     type: Type.ArrayType
+//     elementType: IdentifierType
+// }
 
-export interface TupleType extends Expression {
-    type: Type.TupleType
-    elementTypes: IdentifierType[]
-}
+// export interface TupleType extends Expression {
+//     type: Type.TupleType
+//     elementTypes: IdentifierType[]
+// }

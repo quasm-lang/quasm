@@ -1,0 +1,12 @@
+func multval() -> (i32, i32, f64) {
+    return (10, 20, 2.3);
+}
+
+func main() {
+    let a, b, c = multval();
+    let x: i32, y: i32, z: f64 = (59, 60, 5.6);
+
+    print(a+b+x);
+    print(c+z);
+}
+
