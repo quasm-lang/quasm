@@ -1,6 +1,5 @@
 import { Parser } from '../parser.ts'
 import * as Ast from '../ast.ts'
-import * as Symbol from '../../symbolTable.ts'
 import * as Token from '../../lexer/token.ts'
 import * as Type from '../../datatype/mod.ts'
 
@@ -33,11 +32,7 @@ Parser.prototype.parseFloatLiteral = function () {
 
 Parser.prototype.parseStringLiteral = function () {
     const value = this.consume().literal
-    this.symbolTable.define({
-        type: Symbol.Type.StringLiteral,
-        name: `_str_${value}`,
-        value
-    } as Symbol.StringLiteral)
+    this.symbolTable.defineStringLiteral(value)
     
     return {
         type: Ast.Type.StringLiteral,

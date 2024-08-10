@@ -58,12 +58,11 @@ export class SemanticAnalyzer {
                 if (spec.dataType && !spec.dataType.eq(elementType)) {
                     throw new Error(`Type mismatch for ${spec.name.value}: expected ${spec.dataType}, got ${elementType}`)
                 }
-                this.symbolTable.define({
-                    type: Symbol.Type.Variable,
-                    name: spec.name.value,
-                    dataType: spec.dataType || elementType,
-                    reason: Symbol.VariableReason.Declaration
-                } as Symbol.Variable)
+                this.symbolTable.defineVariable(
+                    spec.name.value,
+                    spec.dataType || elementType,
+                    Symbol.VariableReason.Declaration
+                )
             }
         } else {
             if (specs.length !== 1) {
@@ -74,13 +73,12 @@ export class SemanticAnalyzer {
             if (spec.dataType && !spec.dataType.eq(inferredType)) {
                 throw new Error(`Type mismatch for ${spec.name.value}: expected ${spec.dataType}, got ${inferredType}`)
             }
-    
-            this.symbolTable.define({
-                type: Symbol.Type.Variable,
-                name: spec.name.value,
-                dataType: spec.dataType || inferredType,
-                reason: Symbol.VariableReason.Declaration
-            } as Symbol.Variable)
+            
+            this.symbolTable.defineVariable(
+                spec.name.value,
+                spec.dataType || inferredType,
+                Symbol.VariableReason.Declaration
+            )
         }
     }
 
@@ -91,14 +89,12 @@ export class SemanticAnalyzer {
         this.symbolTable.enterFunc()
     
         // Add function parameters to the symbol table
-        for (const [index, param] of parameters.entries()) {
-            this.symbolTable.define({
-                type: Symbol.Type.Variable,
-                name: param.name.value,
-                dataType: param.dataType,
-                index,
-                reason: Symbol.VariableReason.Parameter
-            } as Symbol.Variable)
+        for (const param of parameters) {
+            this.symbolTable.defineVariable(
+                param.name.value,
+                param.dataType,
+                Symbol.VariableReason.Parameter
+            )
         }
     
         // Visit the function body
@@ -208,6 +204,7 @@ export class SemanticAnalyzer {
 
     visitIdentifier(identifier: Ast.Identifier): Type.DataType {
         const variable = this.symbolTable.lookup(Symbol.Type.Variable, identifier.value) as Symbol.Variable
+        
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
         }

@@ -91,44 +91,56 @@ export class SymbolTable {
         return symbol ? (symbol as Variable).index : undefined
     }
 
-    define(symbol: Symbol) {
-        switch (symbol.type) {
-            case Type.Variable: {
-                const varSymbol = symbol as Variable
-                varSymbol.index = this.index++
-                this.currentScope().define(varSymbol)
-                if (symbol.reason === VariableReason.Declaration) {
-                    this.currentFunctionVariables.push(symbol as Variable)
-                }
-                break
-            }
-            case Type.StringLiteral: {
-                const strSymbol = symbol as StringLiteral
-                if (!this.stringLiterals.has(strSymbol.value)) {
-                    const value = strSymbol.value
-                    this.stringLiterals.set(strSymbol.value, this.segmentOffset)
+    defineStringLiteral(value: string) {
+        if (!this.stringLiterals.has(value)) {
+            this.stringLiterals.set(value, this.segmentOffset)
 
-                    const strBytes = new TextEncoder().encode(value)
-                    const lengthBytes = new Uint8Array(4)
-                    new DataView(lengthBytes.buffer).setUint32(0, strBytes.length, true)
+            const strBytes = new TextEncoder().encode(value)
+            const lengthBytes = new Uint8Array(4)
+            new DataView(lengthBytes.buffer).setUint32(0, strBytes.length, true)
 
-                    const fullData = new Uint8Array(4 + strBytes.length)
-                    fullData.set(lengthBytes)
-                    fullData.set(strBytes, 4)
+            const fullData = new Uint8Array(4 + strBytes.length)
+            fullData.set(lengthBytes)
+            fullData.set(strBytes, 4)
 
-                    this.segment.push({
-                        offset: this.segmentOffset,
-                        data: fullData
-                    })
+            this.segment.push({
+                offset: this.segmentOffset,
+                data: fullData
+            })
 
-                    this.segmentOffset += fullData.length
-                }
-                break
-            }
-            case Type.Function: {
-                this.topLevel.set((symbol as Function).name, symbol)
-            }
+            this.segmentOffset += fullData.length
         }
+    }
+
+    defineFunction(name: string, params: DataType[], returnType: DataType) {
+        this.topLevel.set(name, {
+            name,
+            type: Type.Function,
+            params,
+            returnType,
+        } as Function)
+    }
+
+    defineVariable(name: string, dataType: DataType, reason: VariableReason): number {
+        const symbol = {
+            name,
+            type: Type.Variable,
+            dataType,
+            reason,
+        } as Variable
+        
+        symbol.index = this.index++
+
+        if (this.currentScope().lookup(name)) {
+            throw new Error(`Variable '${name}' is already defined!`)
+        }
+
+        this.currentScope().define(symbol)
+        if (symbol.reason === VariableReason.Declaration) {
+            this.currentFunctionVariables.push(symbol as Variable)
+        }
+
+        return symbol.index
     }
 
     lookup(symbolType: Type, name: string): Symbol | undefined {

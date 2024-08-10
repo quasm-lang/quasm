@@ -6,6 +6,7 @@ import './core.ts'
 import './sequence.ts'
 
 const precedenceMap: Partial<Record<Token.Type, number>> = {
+    [Token.Type.LeftParen]: 7,
     [Token.Type.LeftBracket]: 6,
     [Token.Type.Dot]: 5,
     [Token.Type.Asterisk]: 4,
@@ -17,7 +18,6 @@ const precedenceMap: Partial<Record<Token.Type, number>> = {
     [Token.Type.GreaterThan]: 2,
     [Token.Type.GreaterThanOrEqual]: 2,
     [Token.Type.LessThanOrEqual]: 2,
-    [Token.Type.LeftParen]: 1,
 }
 
 function getPrecedence(type: Token.Type): number {

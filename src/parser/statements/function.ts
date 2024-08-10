@@ -2,7 +2,6 @@ import { Parser } from '../parser.ts'
 import * as Ast from '../ast.ts'
 import * as Type from '../../datatype/mod.ts'
 import * as Token from '../../lexer/token.ts'
-import * as Symbol from '../../symbolTable.ts'
 
 declare module '../parser.ts' {
     interface Parser {
@@ -27,12 +26,11 @@ Parser.prototype.parseFuncStatement = function () {
     const block = this.parseBlockStatement()
     
     // Define function in symbol table
-    this.symbolTable.define({
-        type: Symbol.Type.Function,
-        name: name.value,
-        params: parameters.map(param => param.dataType),
+    this.symbolTable.defineFunction(
+        name.value,
+        parameters.map(param => param.dataType),
         returnType
-    } as Symbol.Function)
+    )
 
     return {
         type: Ast.Type.FuncStatement,

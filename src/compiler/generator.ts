@@ -121,14 +121,11 @@ export class CodeGenerator {
             const tupleType = exprType as Type.TupleType
 
             statement.specs.forEach((spec, index) => {
-                this.symbolTable.define({
-                    type: Symbol.Type.Variable,
-                    name: spec.name.value,
-                    dataType: tupleType.elementTypes[index],
-                    reason: Symbol.VariableReason.Declaration
-                } as Symbol.Variable)
-
-                const localIndex = this.symbolTable.getIndex(spec.name.value)!
+                const localIndex = this.symbolTable.defineVariable(
+                    spec.name.value,
+                    tupleType.elementTypes[index],
+                    Symbol.VariableReason.Declaration
+                )
 
                 setLocals.push(
                     this.module.local.set(
@@ -143,14 +140,11 @@ export class CodeGenerator {
         }
 
         const spec = statement.specs[0]
-        this.symbolTable.define({
-            type: Symbol.Type.Variable,
-            name: spec.name.value,
-            dataType: exprType,
-            reason: Symbol.VariableReason.Declaration
-        } as Symbol.Variable)
-
-        const localIndex = this.symbolTable.getIndex(spec.name.value)!
+        const localIndex = this.symbolTable.defineVariable(
+            spec.name.value,
+            exprType,
+            Symbol.VariableReason.Declaration
+        )
 
         return this.module.local.set(localIndex, initExpr)
     }
@@ -165,13 +159,11 @@ export class CodeGenerator {
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(funcSymbol.params[index].toWasmType())
-            this.symbolTable.define({
-                type: Symbol.Type.Variable,
-                name: param.name.value,
-                dataType: param.dataType,
-                index,
-                reason: Symbol.VariableReason.Parameter
-            } as Symbol.Variable)
+            this.symbolTable.defineVariable(
+                param.name.value,
+                param.dataType,
+                Symbol.VariableReason.Parameter
+            )
         }
 
         // handle return type
