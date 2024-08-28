@@ -65,7 +65,8 @@ function compileAndRun(src: string) {
     })
 
     const main = wasmInstance.exports.main as CallableFunction
-    main()
+    
+    if (typeof main === 'function') main()
 
     if (getOptions().debug) {
         const memory = wasmInstance.exports.memory as WebAssembly.Memory
