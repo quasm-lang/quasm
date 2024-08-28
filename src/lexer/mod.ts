@@ -198,7 +198,7 @@ export class Lexer {
         
         if (getOptions().debug) {
             Deno.writeTextFileSync('debug/tokens.txt', 
-                `│ ${token.type.padEnd(10)} │ ${token.line.toString().padStart(3)}:${token.column.toString().padStart(3)} │ ${token.literal}${token.type === Token.Type.EOF ? '' : '\n'}`, 
+                `│ ${token.type.padEnd(15)} │ ${token.line.toString().padStart(3)}:${token.column.toString().padStart(3)} │ ${token.literal}${token.type === Token.Type.EOF ? '' : '\n'}`, 
                 {append: true}
             )
             
