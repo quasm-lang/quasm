@@ -3,8 +3,8 @@ import * as Token from './token.ts'
 import { getOptions } from '../options.ts'
 
 function isWhitespace(char: string): boolean {
-    return /\s+/.test(char) // skips all whitespaces
-    //return /[ \t]/.test(char)
+    // return /\s+/.test(char) // skips all whitespaces
+    return /^[ \t]$/.test(char)
 }
 
 // Numericals
@@ -25,6 +25,7 @@ export class Lexer {
     private index: number = 0
     private line: number = 1
     private column: number = 1
+    private lastToken?: Token.Token
 
     constructor(private src: string) {}
 
@@ -56,6 +57,15 @@ export class Lexer {
         return this.index >= this.src.length
     }
 
+    private newToken(type: Token.Type, literal?: string): Token.Token {
+        return {
+            type,
+            line: this.line,
+            column: this.column - (literal?.length || 1),
+            literal: literal || ''
+        }
+    }
+
     private skipWhitespace() {
         while (!this.eof() && isWhitespace(this.current())) {
             this.advance()
@@ -69,16 +79,15 @@ export class Lexer {
         this.skipWhitespace()
     }
 
-    private newToken(type: Token.Type, literal?: string): Token.Token {
-        return {
-            type,
-            line: this.line,
-            column: this.column - (literal?.length || 1),
-            literal: literal || ''
-        }
+    private shouldInsertSemicolon(): boolean {
+        return [
+            Token.Type.Integer,
+            Token.Type.Float,
+            Token.Type.Identifier,
+            Token.Type.RightParen
+        ].includes(this.lastToken!.type)
     }
 
-    // Tokenizer functions
     private readNumber(): string {
         let number: string = ''
 
@@ -148,7 +157,17 @@ export class Lexer {
                 this.skipComment()
             }
 
-            if (isDigit(this.current())) {
+            if (this.current() === '\n') {
+                if (this.shouldInsertSemicolon()) {
+                    token = this.newToken(Token.Type.Semicolon)
+                    this.advance()
+                    break
+                } else {
+                    this.advance()
+                    continue
+                }
+            }
+            else if (isDigit(this.current())) {
                 token = this.readDecimal()
                 break
             }
@@ -184,6 +203,9 @@ export class Lexer {
             )
             
         }
+
+        this.lastToken = token
+
         return token
     }
 
