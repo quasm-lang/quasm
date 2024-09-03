@@ -121,6 +121,7 @@ export type InfixOperator =
     Type.GreaterThan |
     Type.LessThan |
     Type.Equality |
+    Type.NonEquality |
     Type.GreaterThanOrEqual |
     Type.LessThanOrEqual |
     Type.Dot

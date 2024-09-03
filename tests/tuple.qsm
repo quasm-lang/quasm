@@ -9,4 +9,3 @@ func main() {
     print(a+b+x+y)
     print(c+z)
 }
-

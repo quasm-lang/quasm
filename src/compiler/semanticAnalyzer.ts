@@ -2,6 +2,7 @@ import * as Ast from '../parser/ast.ts'
 import * as Type from '../datatype/mod.ts'  
 import * as Token from '../lexer/token.ts'
 import * as Symbol from '../symbolTable.ts'
+import * as DataType from '../datatype/mod.ts'
 
 export class SemanticAnalyzer {
     constructor(private symbolTable: Symbol.SymbolTable) {}
@@ -229,14 +230,15 @@ export class SemanticAnalyzer {
     }
 
     visitBinaryExpression(expression: Ast.BinaryExpression): Type.DataType {
-        const leftType = this.visitExpression(expression.left)
-        const rightType = this.visitExpression(expression.right)
-    
-        if (!leftType.eq(rightType)) {
-            throw new Error(`Type mismatch: Cannot perform binary operation on types ${leftType} and ${rightType}`)
-        }
-    
-        return leftType
+        const left = this.visitExpression(expression.left)
+        const right = this.visitExpression(expression.right)
+
+        const result = DataType.checkBinaryOperation(left, expression.operator, right)
+        
+        if (result === null)
+            throw new Error(`Invalid binary operation: ${left} ${expression.operator} ${right}`)
+
+        return result
     }
 
     visitUnaryExpression(expression: Ast.UnaryExpression): Type.DataType {

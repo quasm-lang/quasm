@@ -1,4 +1,5 @@
 import { binaryen } from '../deps.ts'
+import * as Token from '../lexer/token.ts'
 
 export enum TypeKind {
     Primitive = 'Primitive',
@@ -99,8 +100,54 @@ export const None: PrimitiveType = {
 }
 
 // helper functions
+export function checkBinaryOperation(left: DataType, operator: Token.InfixOperator, right: DataType): DataType | null {
+    if (isPrimitiveType(left) && isPrimitiveType(right)) {
+        switch (operator) {
+            case Token.Type.Plus:
+            case Token.Type.Minus:
+            case Token.Type.Asterisk:
+            case Token.Type.Slash:
+                if (!isNumericType(left) || !isNumericType(right)) {
+                    return null
+                }
+                if (left.eq(i32) && right.eq(i32)) {
+                    return i32
+                }
+                return f64
+            case Token.Type.Equality:
+            case Token.Type.NonEquality:
+                if (left.eq(right)) {
+                    return i32 // boolean
+                }
+                break
+            case Token.Type.LessThan:
+            case Token.Type.GreaterThan:
+            case Token.Type.LessThanOrEqual:
+            case Token.Type.GreaterThanOrEqual:
+                if (left.eq(i32) && right.eq(i32) || 
+                    left.eq(f64) && right.eq(f64)
+                ) {
+                    return i32 // boolean
+                }
+                break
+            case Token.Type.LogicalAnd:
+            case Token.Type.LogicalOr:
+                if (left.eq(i32) && right.eq(i32)) {
+                    return i32 //boolean
+                }
+                break
+        }
+    }
+    
+    return null
+}
+
 export function isPrimitiveType(type: DataType): type is PrimitiveType {
     return type.kind === TypeKind.Primitive
+}
+
+function isNumericType(type: DataType): boolean {
+    return type.eq(i32) || type.eq(f64) // || type.eq(Boolean)
 }
 
 export function fromString(typeString: string): DataType {
