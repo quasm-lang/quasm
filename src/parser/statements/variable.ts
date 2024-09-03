@@ -5,13 +5,13 @@ import * as Type from '../../datatype/mod.ts'
 
 declare module '../parser.ts' {
     interface Parser {
-        parseLetStatement(): Ast.LetStatement
+        parseVarStatement(): Ast.VarStatement
         parseAssignmentStatement(left: Ast.Expression): Ast.AssignmentStatement
     }
 }
 
-Parser.prototype.parseLetStatement = function() {
-    this.match(Token.Type.Let)
+Parser.prototype.parseVarStatement = function() {
+    this.match(Token.Type.Var)
     
     const specs: Ast.Spec[] = []
     do {
@@ -36,7 +36,7 @@ Parser.prototype.parseLetStatement = function() {
     this.match(Token.Type.Semicolon)
 
     return {
-        type: Ast.Type.LetStatement,
+        type: Ast.Type.VarStatement,
         specs,
         value,
         location: this.getLocation()

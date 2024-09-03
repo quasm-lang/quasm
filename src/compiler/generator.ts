@@ -91,8 +91,8 @@ export class CodeGenerator {
         switch (statement.type) {
             case Ast.Type.ExpressionStatement:
                 return this.visitExpressionStatement(statement as Ast.ExpressionStatement)
-            case Ast.Type.LetStatement:
-                return this.visitLetStatement(statement as Ast.LetStatement)
+            case Ast.Type.VarStatement:
+                return this.visitVarStatement(statement as Ast.VarStatement)
             case Ast.Type.FuncStatement:
                 return this.visitFuncStatement(statement as Ast.FuncStatement)
             case Ast.Type.ReturnStatement:
@@ -110,7 +110,7 @@ export class CodeGenerator {
         }
     } 
 
-    private visitLetStatement(statement: Ast.LetStatement): binaryen.ExpressionRef {
+    private visitVarStatement(statement: Ast.VarStatement): binaryen.ExpressionRef {
         const { value, dataType } = statement
         
         const initExpr = this.visitExpression(value)

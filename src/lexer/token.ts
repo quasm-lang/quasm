@@ -32,7 +32,7 @@ export enum Type {
     LeftBracket = '[',
     RightBracket = ']',
 
-    Let = 'let',
+    Var = 'var',
     Func = 'func',
     Return = 'return',
     True = 'true',
@@ -95,7 +95,7 @@ export const keywords: Record<string, Type> = {
     'f64': Type.IdentifierType,
     'none': Type.IdentifierType,
     'string': Type.IdentifierType,
-    'let': Type.Let,
+    'var': Type.Var,
     'func': Type.Func,
     'return': Type.Return,
     'true': Type.True,

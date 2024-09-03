@@ -19,8 +19,8 @@ export class SemanticAnalyzer {
 
     visitStatement(statement: Ast.Statement) {
         switch (statement.type) {
-            case Ast.Type.LetStatement:
-                this.visitLetStatement(statement as Ast.LetStatement)
+            case Ast.Type.VarStatement:
+                this.visitVarStatement(statement as Ast.VarStatement)
                 break
             case Ast.Type.FuncStatement:
                 this.visitFuncStatement(statement as Ast.FuncStatement)
@@ -43,7 +43,7 @@ export class SemanticAnalyzer {
         }
     }
 
-    visitLetStatement(statement: Ast.LetStatement) {
+    visitVarStatement(statement: Ast.VarStatement) {
         const { specs, value } = statement
         const inferredType = this.visitExpression(value)
         statement.dataType = inferredType

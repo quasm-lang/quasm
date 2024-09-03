@@ -75,8 +75,8 @@ export class Parser {
             return this.parseFuncStatement()
         } else if (this.eq(Token.Type.Return)) {
             return this.parseReturnStatement()
-        } else if (this.eq(Token.Type.Let)) {
-            return this.parseLetStatement()
+        } else if (this.eq(Token.Type.Var)) {
+            return this.parseVarStatement()
         } else if (this.eq(Token.Type.If)) {
             return this.parseIfStatement()
         } else if (this.eq(Token.Type.While)) {

@@ -6,11 +6,11 @@ func fibonacci(n: i32) -> i32 {
 }
 
 func main() {
-    let n = 20
-    let i = 0
+    var n = 20
+    var i = 0
     
     while i <= n {
-        let result = fibonacci(i)
+        var result = fibonacci(i)
         print(result)
         i = i + 1
     }

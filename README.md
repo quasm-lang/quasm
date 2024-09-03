@@ -5,7 +5,7 @@ Quasm is a programming language designed to compile directly to WebAssembly (WAS
 
 ```
 func main() {
-    let result = add(12, 28)
+    var result = add(12, 28)
     print(result)
 }
 

@@ -3,8 +3,8 @@ func multval() -> (i32, i32, f64) {
 }
 
 func main() {
-    let a, b, c = multval()
-    let x: i32, y: i32, z: f64 = (30, 40, 5.6)
+    var a, b, c = multval()
+    var x: i32, y: i32, z: f64 = (30, 40, 5.6)
 
     print(a+b+x+y)
     print(c+z)

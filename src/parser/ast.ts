@@ -4,7 +4,7 @@ import { DataType } from '../datatype/mod.ts'
 
 export enum Type {
     Program = 'PROGRAM',
-    LetStatement = 'LET_STATEMENT',
+    VarStatement = 'VAR_STATEMENT',
     BlockStatement = 'BLOCK_STATEMENT',
     ExpressionStatement = 'EXPRESSION_STATEMENT',
     FuncStatement = 'FUNC_STATEMENT',
@@ -69,8 +69,8 @@ export interface BlockStatement extends Statement {
     statements: Statement[]
 }
 
-export interface LetStatement extends Statement {
-    type: Type.LetStatement
+export interface VarStatement extends Statement {
+    type: Type.VarStatement
     specs: Spec[]
     value: Expression
     dataType?: DataType
