@@ -339,6 +339,8 @@ export class CodeGenerator {
         switch (expression.operator) {
             case Token.Type.Minus:
                 return this.module.i32.sub(this.module.i32.const(0), right)
+            case Token.Type.LogicalNot:
+                return this.module.i32.eqz(right)
             default:
                 throw new Error(`Unhandled unary operator ${expression.operator}`)
         }
@@ -348,6 +350,7 @@ export class CodeGenerator {
         const left = this.visitExpression(node.left)
         const right = this.visitExpression(node.right)
 
+        /** TODO: Remove deprecated type code in binary expression */
         const leftType = binaryen.getExpressionType(left)
         const rightType = binaryen.getExpressionType(right)
 
@@ -386,6 +389,10 @@ export class CodeGenerator {
                 return this.module.i32.ge_s(left, right)
             case Token.Type.LessThanOrEqual:
                 return this.module.i32.le_s(left, right)
+            case Token.Type.LogicalAnd:
+                return this.module.i32.and(left, right)
+            case Token.Type.LogicalOr:
+                return this.module.i32.or(left, right)
             default:
                 throw new Error(`Unhandled binary operator: ${node.operator}`)
         }

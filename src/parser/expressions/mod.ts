@@ -6,18 +6,20 @@ import './core.ts'
 import './sequence.ts'
 
 const precedenceMap: Partial<Record<Token.Type, number>> = {
-    [Token.Type.LeftParen]: 7,
-    [Token.Type.LeftBracket]: 6,
-    [Token.Type.Dot]: 5,
-    [Token.Type.Asterisk]: 4,
-    [Token.Type.Slash]: 4,
-    [Token.Type.Plus]: 3,
-    [Token.Type.Minus]: 3,
-    [Token.Type.Equality]: 2,
-    [Token.Type.LessThan]: 2,
-    [Token.Type.GreaterThan]: 2,
-    [Token.Type.GreaterThanOrEqual]: 2,
-    [Token.Type.LessThanOrEqual]: 2,
+    [Token.Type.LeftParen]: 8,
+    [Token.Type.LeftBracket]: 7,
+    [Token.Type.Dot]: 6,
+    [Token.Type.Asterisk]: 5,
+    [Token.Type.Slash]: 5,
+    [Token.Type.Plus]: 4,
+    [Token.Type.Minus]: 4,
+    [Token.Type.Equality]: 3,
+    [Token.Type.LessThan]: 3,
+    [Token.Type.GreaterThan]: 3,
+    [Token.Type.GreaterThanOrEqual]: 3,
+    [Token.Type.LessThanOrEqual]: 3,
+    [Token.Type.LogicalAnd]: 2,
+    [Token.Type.LogicalOr]: 1
 }
 
 function getPrecedence(type: Token.Type): number {
@@ -60,6 +62,8 @@ Parser.prototype.parsePrefixExpression = function () {
             return this.parseIdentifier()
         case Token.Type.Minus:
             return this.parseUnaryExpression()
+        case Token.Type.LogicalNot:
+            return this.parseUnaryExpression()
         case Token.Type.LeftParen:
             return this.parseGroupedExpression()
         case Token.Type.LeftBracket:
@@ -74,6 +78,8 @@ Parser.prototype.parseInfixExpression = function (left) {
         case Token.Type.Minus:
         case Token.Type.Asterisk:
         case Token.Type.Slash:
+        case Token.Type.LogicalOr:
+        case Token.Type.LogicalAnd:
         case Token.Type.GreaterThan:
         case Token.Type.LessThan:
         case Token.Type.Equality:

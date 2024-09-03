@@ -9,12 +9,12 @@ export enum Type {
     Minus = '-',
     Asterisk = '*',
     Slash = '/',
-    Bang = '!',
     Comma = ',',
     Dot = '.',
     Colon = ':',
     Semicolon = ';',
     RightArrow = '->',
+    LogicalNot = '!', 
     LogicalOr = '||',
     LogicalAnd = '&&',
     Assignment = '=',
@@ -63,7 +63,7 @@ export const tokenList: Record<string, Type> = {
     '-': Type.Minus,
     '*': Type.Asterisk,
     '/': Type.Slash,
-    '!': Type.Bang,
+    '!': Type.LogicalNot,
     '(': Type.LeftParen,
     ')': Type.RightParen,
     '{': Type.LeftBrace,
@@ -116,6 +116,8 @@ export type InfixOperator =
     Type.Minus |
     Type.Asterisk |
     Type.Slash |
+    Type.LogicalAnd |
+    Type.LogicalOr |
     Type.GreaterThan |
     Type.LessThan |
     Type.Equality |
