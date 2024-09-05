@@ -155,7 +155,11 @@ export class CodeGenerator {
         // handle parameters
         this.symbolTable.enterFunc()
         const params = []
-        const funcSymbol = this.symbolTable.lookup(Symbol.Type.Function, name) as Symbol.Function
+        const funcSymbol = this.symbolTable.lookupFunction(name)
+
+        if (funcSymbol === undefined) {
+            throw new Error(`Function '${name}' not found in symbol table`)
+        }
 
         for (const [index, param] of func.parameters.entries()) {
             params.push(funcSymbol.params[index].toWasmType())
@@ -206,7 +210,7 @@ export class CodeGenerator {
                 const value = this.visitExpression(statement.value)
         
                 // Find the identifier in the current scope stack
-                const variable = this.symbolTable.lookup(Symbol.Type.Variable, name) as Symbol.Variable
+                const variable = this.symbolTable.lookupVariable(name)
         
                 if (variable === undefined) {
                     throw new Error(`Variable ${name} doesn\'t exist`)
@@ -315,8 +319,8 @@ export class CodeGenerator {
         const name = expression.callee.value
 
         // Check if the function is declared in the symbol table
-        const symbol = this.symbolTable.lookup(Symbol.Type.Function, name)
-        if (!symbol) {
+        const symbol = this.symbolTable.lookupFunction(name)
+        if (symbol === undefined) {
             throw new Error(`Undefined call expression: ${name}`)
         }
 
@@ -406,7 +410,7 @@ export class CodeGenerator {
 
     // Returns initial pointer of string
     private visitStringLiteral(node: Ast.StringLiteral): binaryen.ExpressionRef {
-        const symbol = this.symbolTable.lookup(Symbol.Type.StringLiteral, node.value) as Symbol.StringLiteral
+        const symbol = this.symbolTable.lookupStringLiteral(node.value)
         if (symbol.offset === undefined) {
             throw new Error(`String literal offset not found: ${node.value}`)
         }
@@ -419,7 +423,7 @@ export class CodeGenerator {
     }
 
     private visitIdentifier(identifier: Ast.Identifier): binaryen.ExpressionRef {
-        const variable = this.symbolTable.lookup(Symbol.Type.Variable, identifier.value) as Symbol.Variable
+        const variable = this.symbolTable.lookupVariable(identifier.value)
         if (variable === undefined) {
             throw new Error(`Variable ${identifier.value} not found in scope`)
         }

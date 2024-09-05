@@ -123,7 +123,7 @@ export class SemanticAnalyzer {
         switch (left.type) {
             case Ast.Type.Identifier: {
                 const left_ = left as Ast.Identifier
-                const variableType = (this.symbolTable.lookup(Symbol.Type.Variable, left_.value) as Symbol.Variable)?.dataType
+                const variableType = this.symbolTable.lookupVariable(left_.value)?.dataType
                 const valueType = this.visitExpression(value)
                 
                 if (!variableType) {
@@ -204,7 +204,7 @@ export class SemanticAnalyzer {
     }
 
     visitIdentifier(identifier: Ast.Identifier): Type.DataType {
-        const variable = this.symbolTable.lookup(Symbol.Type.Variable, identifier.value) as Symbol.Variable
+        const variable = this.symbolTable.lookupVariable(identifier.value)
         
         if (!variable) {
             throw new Error(`Undefined variable '${identifier.value}'`)
@@ -252,7 +252,7 @@ export class SemanticAnalyzer {
     }
     
     visitCallExpression(expression: Ast.CallExpression): Type.DataType {
-        const symbol = this.symbolTable.lookup(Symbol.Type.Function, expression.callee.value)
+        const symbol = this.symbolTable.lookupFunction(expression.callee.value)
 
         if (!symbol) {
             throw new Error(`Undefined function '${expression.callee.value}'`)

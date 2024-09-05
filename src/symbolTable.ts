@@ -37,13 +37,13 @@ export interface StringLiteral {
 }
 
 class Scope {
-    symbols: Map<string, Symbol> = new Map()
+    symbols: Map<string, Variable> = new Map()
 
     define(symbol: Variable) {
         this.symbols.set(symbol.name, symbol)
     }
 
-    lookup(name: string): Symbol | undefined {
+    lookup(name: string): Variable | undefined {
         return this.symbols.get(name)
     }
 
@@ -53,7 +53,7 @@ class Scope {
 }
 
 export class SymbolTable {
-    private topLevel: Map<string, Symbol> = new Map()
+    private topLevel: Map<string, Function> = new Map()
 
     private scopes: Scope[] = []
     private currentFunctionVariables: Variable[] = []
@@ -87,7 +87,7 @@ export class SymbolTable {
     }
 
     getIndex(name: string): number | undefined {
-        const symbol = this.lookup(Type.Variable, name)
+        const symbol = this.lookupVariable(name)
         return symbol ? (symbol as Variable).index : undefined
     }
 
@@ -143,24 +143,23 @@ export class SymbolTable {
         return symbol.index
     }
 
-    lookup(symbolType: Type, name: string): Symbol | undefined {
-        switch (symbolType) {
-            case Type.StringLiteral: {
-                return {
-                    value: name,
-                    offset: this.stringLiterals.get(name)
-                } as StringLiteral
+    lookupFunction(name: string): Function | undefined {
+        return this.topLevel.get(name)
+    }
+
+    lookupStringLiteral(name: string): StringLiteral {
+        return {
+            value: name,
+            offset: this.stringLiterals.get(name)
+        } as StringLiteral
+    }
+
+    lookupVariable(name: string): Variable | undefined {
+        for (let i = this.scopes.length - 1; i >= 0; i--) {
+            const symbol = this.scopes[i].lookup(name)
+            if (symbol) {
+                return symbol
             }
-            case Type.Variable:
-                for (let i = this.scopes.length - 1; i >= 0; i--) {
-                    const symbol = this.scopes[i].lookup(name)
-                    if (symbol) {
-                        return symbol
-                    }
-                }
-                break
-            case Type.Function:
-                return this.topLevel.get(name)
         }
-    } 
+    }
 }
