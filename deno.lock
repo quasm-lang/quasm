@@ -2,11 +2,11 @@
   "version": "3",
   "packages": {
     "specifiers": {
-      "npm:binaryen@118.0.0": "npm:binaryen@118.0.0"
+      "npm:binaryen@119.0.0": "npm:binaryen@119.0.0"
     },
     "npm": {
-      "binaryen@118.0.0": {
-        "integrity": "sha512-KzekjPjpLE1zk29BKQSHNWLSHPYAfa80lcsIi5bDnev8vyfDyiMCVFPjaplhfXIKs7LI3r1RPyhoAj4qsRQwwg==",
+      "binaryen@119.0.0": {
+        "integrity": "sha512-DTdcs8ijrj2OIEftWVPVkYsgJ8MzlYH+uSsC8156g88E7CNaG8kEfWNGSXxb3tPlzadrm6sD3mgSEKKZJu4Q3g==",
         "dependencies": {}
       }
     }
@@ -242,7 +242,7 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:binaryen@118.0.0"
+      "npm:binaryen@119.0.0"
     ]
   }
 }
