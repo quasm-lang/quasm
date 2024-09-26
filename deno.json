@@ -7,6 +7,7 @@
     "tasks": {
         "run": "deno run --allow-read=. --allow-write src/main.ts run",
         "compile": "deno run --allow-read=. --allow-write src/main.ts compile",
-        "clean": "rm -rf dist/ && rm -rf debug/"
+        "clean": "rm -rf dist/ && rm -rf debug/ && rm quasm",
+        "build": "deno compile --output quasm --allow-read --allow-write src/main.ts"
     }
 }

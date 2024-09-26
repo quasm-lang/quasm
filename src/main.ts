@@ -8,17 +8,27 @@ import { emit } from './compiler/mod.ts'
 
 await new Command()
     .name('Quasm')
-    .version('0.0.6')
+    .version('0.0.7')
     .description('Compiles to WASM')
     .globalOption('-d, --debug', 'Enable debugging.', { default: false })
-    .action(() => console.log('Please use proper commands!'))
+    .action(() => {
+        if (import.meta.main)
+            console.log('Please use proper commands!')
+    })
 
     .command('run', 'Compile internally and run')
     .arguments('<source:string>')
     .action((options, ...args) => {
         const file = args[0]
         setOptions(options)
-        compileAndRun(load(file))
+        
+        const binary = compile(load(file))
+        const instance = run(binary)
+
+        if (getOptions().debug) {
+            const memory = instance.exports.memory as WebAssembly.Memory
+            Deno.writeFileSync('debug/memory.hex', new Uint8Array(memory.buffer))
+        }
     })
 
     .command('compile', 'Compile to WASM binary')
@@ -26,7 +36,10 @@ await new Command()
     .action((_, ...args) => {
         const file = args[0]
         const dest = args[1] ? args[1] : file.replace(/\.[^/.]+$/, '')
-        compile(load(file), dest)
+        
+        const binary = compile(load(file))
+        ensureDirSync('./dist')
+        Deno.writeFileSync(join('dist', `${basename(dest)}.wasm`), binary)
     })
     .parse(Deno.args)
 
@@ -44,10 +57,12 @@ function load(file: string): string {
     }
 }
 
-function compileAndRun(src: string) {
-    const module = emit(src)
+export function compile(src: string) {
+    return emit(src).emitBinary()
+}
 
-    const wasmModule = new WebAssembly.Module(module.emitBinary())
+export function run(binary: BufferSource): WebAssembly.Instance {
+    const wasmModule = new WebAssembly.Module(binary)
     const wasmInstance = new WebAssembly.Instance(wasmModule, {
         env: {
             __print_primitive: (value: number) => {
@@ -68,15 +83,5 @@ function compileAndRun(src: string) {
     
     if (typeof main === 'function') main()
 
-    if (getOptions().debug) {
-        const memory = wasmInstance.exports.memory as WebAssembly.Memory
-        Deno.writeFileSync('debug/memory.hex', new Uint8Array(memory.buffer))
-    }
-}
-
-function compile(src: string, dest: string) {
-    const module = emit(src)
-
-    ensureDirSync('./dist')
-    Deno.writeFileSync(join('dist', `${basename(dest)}.wasm`), module.emitBinary())
+    return wasmInstance
 }
