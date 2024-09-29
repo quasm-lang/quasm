@@ -57,11 +57,11 @@ export class Lexer {
         return this.index >= this.src.length
     }
 
-    private newToken(type: Token.Type, literal?: string): Token.Token {
+    private newToken(type: Token.Type, literal: string, starting_col?: number): Token.Token {
         return {
             type,
             line: this.line,
-            column: this.column - (literal?.length || 1),
+            column: starting_col || this.column,
             literal: literal || ''
         }
     }
@@ -96,35 +96,36 @@ export class Lexer {
             this.advance()
         }
 
-        // return this.newToken(Token.Type.Integer, number)
         return number
     }
 
     private readDecimal(): Token.Token {
+        const col = this.column
         const integer = this.readNumber()
 
         // Now check if the number is decimal
         if (this.current() === '.') {
             this.advance()
             const fraction = this.readNumber()
-            return this.newToken(Token.Type.Float, `${integer}.${fraction}`)
+            return this.newToken(Token.Type.Float, `${integer}.${fraction}`, col)
         }
-        return this.newToken(Token.Type.Integer, integer)
+        return this.newToken(Token.Type.Integer, integer, col)
     }
 
     private readIdentifier(): Token.Token {
-        let literal: string = this.current()
-        this.advance()
+        const col = this.column
+        let literal = ''
 
         while (isAlpha(this.current()) || isDigit(this.current())) {
             literal += this.current()
             this.advance()
         }
 
-        return this.newToken(lookupIdentifier(literal), literal)
+        return this.newToken(lookupIdentifier(literal), literal, col)
     }
 
     private readString(): Token.Token {
+        const col = this.column
         let literal = ''
         this.advance()
 
@@ -133,23 +134,30 @@ export class Lexer {
             this.advance()
         }
         
-        return this.newToken(Token.Type.String, literal)
+        return this.newToken(Token.Type.String, literal, col)
     }
 
     private readMultiChar(): Token.Token {
+        const col = this.column
         const chars = this.current() + this.peek(1)
         const tokenType = Token.multiCharTokenList[chars]
         this.advance() // Consume the second character
-        return this.newToken(tokenType, chars)
+        return this.newToken(tokenType, chars, col)
     }
 
     nextToken(): Token.Token {
-        let token: Token.Token = this.newToken(Token.Type.EOF)
+        let token: Token.Token = {
+            type: Token.Type.EOF,
+            line: this.line,
+            column: this.column,
+            literal: ''
+        }
 
         while (!this.eof()) {
             this.skipWhitespace()
 
             if (this.eof()) {
+                token = this.newToken(Token.Type.EOF, this.current())
                 break
             }
             
@@ -159,7 +167,7 @@ export class Lexer {
 
             if (this.current() === '\n') {
                 if (this.shouldInsertSemicolon()) {
-                    token = this.newToken(Token.Type.Semicolon)
+                    token = this.newToken(Token.Type.Semicolon, String.raw`\n`)
                     this.advance()
                     break
                 } else {
