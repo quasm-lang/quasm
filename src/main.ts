@@ -1,14 +1,14 @@
 
 import { Command } from './deps.ts'
-import { ensureDirSync } from 'std/fs/mod.ts'
-import { basename, join } from 'std/path/mod.ts'
+import { ensureDirSync } from '@std/fs'
+import { basename, join } from '@std/path'
 import { setOptions, getOptions } from './options.ts'
 
 import { emit } from './compiler/mod.ts'
 
 await new Command()
     .name('Quasm')
-    .version('0.0.7')
+    .version('0.0.8')
     .description('Compiles to WASM')
     .globalOption('-d, --debug', 'Enable debugging.', { default: false })
     .action(() => {

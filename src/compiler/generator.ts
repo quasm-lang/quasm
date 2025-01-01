@@ -60,7 +60,6 @@ export class CodeGenerator {
             Deno.exit(1)
         }
         
-        this.module.autoDrop()
         return this.module
     }
 
